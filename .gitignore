@@ -1,0 +1,37 @@
+# Maven build directory (recreated automatically)
+target/
+
+# Ant build directory (if using Ant)
+build/
+
+# IDE output directory
+out/
+
+# Compiled class files
+*.class
+
+# JAR files (build output)
+*.jar
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+.settings/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
