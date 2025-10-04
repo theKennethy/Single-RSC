@@ -1,4 +1,4 @@
-<img width="1200" height="800" alt="rsmap" src="https://github.com/user-attachments/assets/6a91d2ac-2c7c-4ce1-a59c-4e7167c85e19" />
+<img width="1200" height="800" alt="rsmap" src="rsmap.png" />
 
 # RSC Single Player
 
