@@ -259,27 +259,30 @@ public class BotCommands extends Plugin implements CommandListener {
         
         switch (type) {
             case "oak":
-                treeIds = new int[] { 306 };
+                treeIds = new int[] { 307 };
                 logIds = new int[] { 632 };
                 break;
             case "willow":
-                treeIds = new int[] { 307 };
+                treeIds = new int[] { 308 };
                 logIds = new int[] { 633 };
                 break;
             case "maple":
-                treeIds = new int[] { 308 };
+                treeIds = new int[] { 309 };
                 logIds = new int[] { 634 };
                 break;
             case "yew":
-                treeIds = new int[] { 309 };
+                treeIds = new int[] { 310 };
                 logIds = new int[] { 635 };
                 break;
             case "magic":
-                treeIds = new int[] { 310 };
+                treeIds = new int[] { 311 };
                 logIds = new int[] { 636 };
                 break;
+            case "normal":
+            case "tree":
+            case "regular":
             default:
-                treeIds = new int[] { 0 };
+                treeIds = new int[] { 0, 1, 70 };
                 logIds = new int[] { 14 };
                 type = "normal";
                 break;

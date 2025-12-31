@@ -12,12 +12,12 @@ import org.nemotech.rsc.model.GameObject;
  * 3. When inventory is full, it banks all logs (uses ::bank)
  * 
  * Tree Object IDs:
- * - Regular Tree: 0
- * - Oak Tree: 306
- * - Willow Tree: 307
- * - Maple Tree: 308
- * - Yew Tree: 309
- * - Magic Tree: 310
+ * - Regular Tree: 0, 1, 70
+ * - Oak Tree: 307
+ * - Willow Tree: 308
+ * - Maple Tree: 309
+ * - Yew Tree: 310
+ * - Magic Tree: 311
  * 
  * Log Item IDs:
  * - Logs: 14
@@ -29,8 +29,8 @@ import org.nemotech.rsc.model.GameObject;
  */
 public class WoodcuttingBot extends Bot {
     
-    // Default tree IDs (regular trees)
-    private int[] treeIds = { 0 };
+    // Default tree IDs (regular trees - multiple IDs for different tree graphics)
+    private int[] treeIds = { 0, 1, 70 };
     
     // Default log IDs to bank
     private int[] logIds = { 14 };

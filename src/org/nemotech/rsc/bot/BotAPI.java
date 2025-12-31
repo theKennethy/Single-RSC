@@ -552,7 +552,7 @@ public class BotAPI {
     public GameObject getNearestObject(int... ids) {
         GameObject nearest = null;
         int nearestDist = Integer.MAX_VALUE;
-        int searchRadius = 20;
+        int searchRadius = 50;
         
         for (int dx = -searchRadius; dx <= searchRadius; dx++) {
             for (int dy = -searchRadius; dy <= searchRadius; dy++) {
