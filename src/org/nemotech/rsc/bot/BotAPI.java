@@ -4,6 +4,7 @@ import org.nemotech.rsc.model.*;
 import org.nemotech.rsc.model.player.*;
 import org.nemotech.rsc.model.landscape.Path;
 import org.nemotech.rsc.model.landscape.ActiveTile;
+import org.nemotech.rsc.model.landscape.RegionManager;
 import org.nemotech.rsc.external.EntityManager;
 import org.nemotech.rsc.external.definition.*;
 import org.nemotech.rsc.client.mudclient;
@@ -548,32 +549,24 @@ public class BotAPI {
     
     /**
      * Finds the nearest game object by ID.
+     * Uses RegionManager to get all local objects for better reliability.
      */
     public GameObject getNearestObject(int... ids) {
         GameObject nearest = null;
         int nearestDist = Integer.MAX_VALUE;
-        int searchRadius = 50;
         
-        for (int dx = -searchRadius; dx <= searchRadius; dx++) {
-            for (int dy = -searchRadius; dy <= searchRadius; dy++) {
-                int x = getX() + dx;
-                int y = getY() + dy;
-                
-                ActiveTile tile = World.getWorld().getTile(x, y);
-                if (tile == null || !tile.hasGameObject()) continue;
-                
-                GameObject obj = tile.getGameObject();
-                if (obj == null || obj.isRemoved()) continue;
-                
-                for (int id : ids) {
-                    if (obj.getID() == id) {
-                        int dist = distanceTo(obj);
-                        if (dist < nearestDist) {
-                            nearestDist = dist;
-                            nearest = obj;
-                        }
-                        break;
+        // Use RegionManager to get all local objects - this is more reliable
+        for (GameObject obj : RegionManager.getLocalObjects(getPlayer())) {
+            if (obj == null || obj.isRemoved()) continue;
+            
+            for (int id : ids) {
+                if (obj.getID() == id) {
+                    int dist = distanceTo(obj);
+                    if (dist < nearestDist) {
+                        nearestDist = dist;
+                        nearest = obj;
                     }
+                    break;
                 }
             }
         }

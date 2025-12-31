@@ -1,2 +1,2 @@
 #!/bin/sh
-java -cp "rsc.jar:lib/*" org.nemotech.rsc.Main
+java -cp "Single-RSC.jar:lib/*" org.nemotech.rsc.Main
