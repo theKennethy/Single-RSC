@@ -49,15 +49,15 @@ public class Woodcutting extends Plugin implements ObjectActionListener, ObjectA
         if (command.equals("chop") && object.getID() != 245 && object.getID() != 204) {
             if(Util.inArray(new int[] { 0, 1, 70 }, object.getID())) {
                 TYPE = Trees.REGULAR_TREE;
-            } else if(object.getID() == 307) {
+            } else if(object.getID() == 306) {
                 TYPE = Trees.OAK_TREE;
-            } else if(object.getID() == 308) {
+            } else if(object.getID() == 307) {
                 TYPE = Trees.WILLOW_TREE;
-            } else if(object.getID() == 309) {
+            } else if(object.getID() == 308) {
                 TYPE = Trees.MAPLE_TREE;
-            } else if(object.getID() == 310) {
+            } else if(object.getID() == 309) {
                 TYPE = Trees.YEW_TREE;
-            } else if(object.getID() == 311) {
+            } else if(object.getID() == 310) {
                 TYPE = Trees.MAGIC_TREE;
             }
             handleWoodcutting(owner, object);

@@ -13,11 +13,11 @@ import org.nemotech.rsc.model.GameObject;
  * 
  * Tree Object IDs:
  * - Regular Tree: 0, 1, 70
- * - Oak Tree: 307
- * - Willow Tree: 308
- * - Maple Tree: 309
- * - Yew Tree: 310
- * - Magic Tree: 311
+ * - Oak Tree: 306
+ * - Willow Tree: 307
+ * - Maple Tree: 308
+ * - Yew Tree: 309
+ * - Magic Tree: 310
  * 
  * Log Item IDs:
  * - Logs: 14
@@ -95,16 +95,27 @@ public class WoodcuttingBot extends Bot {
         gameMessage("Woodcutting bot stopped. Total logs banked: " + logsChopped);
     }
     
+    private long lastStatusTime = 0;
+    private int treesChopped = 0;
+    
     @Override
     public int loop() {
         // Check if we need to sleep
         if (api.needsSleep()) {
-            gameMessage("Fatigue is full! Please sleep.");
+            if (System.currentTimeMillis() - lastStatusTime > 10000) {
+                gameMessage("@red@Fatigue full! Use ::sleep or a bed.");
+                lastStatusTime = System.currentTimeMillis();
+            }
             return 5000;
         }
         
         // Don't do anything if busy
-        if (api.isBusy() || api.isMoving()) {
+        if (api.isBusy()) {
+            return random(300, 500);
+        }
+        
+        // If we're walking to a tree, wait until we get there
+        if (state == State.WALKING_TO_TREE && api.isMoving()) {
             return random(300, 500);
         }
         
@@ -125,29 +136,39 @@ public class WoodcuttingBot extends Bot {
     }
     
     private int chopTree() {
-        // Find nearest tree
+        // Find nearest tree (that isn't a stump - check if removed)
         targetTree = api.getNearestObject(treeIds);
         
-        if (targetTree == null) {
-            log("No trees found nearby! Looking for IDs: " + arrayToString(treeIds));
-            return random(2000, 3000);
+        if (targetTree == null || targetTree.isRemoved()) {
+            state = State.IDLE;
+            // Only log occasionally to reduce spam
+            if (System.currentTimeMillis() - lastStatusTime > 5000) {
+                log("Searching for trees... IDs: " + arrayToString(treeIds));
+                lastStatusTime = System.currentTimeMillis();
+            }
+            return random(1000, 2000);
         }
         
-        // Debug: show which tree was found
-        gameMessage("Found tree ID " + targetTree.getID() + " at (" + targetTree.getX() + ", " + targetTree.getY() + ")");
+        int dist = api.distanceTo(targetTree);
         
-        // Check if we're close enough to interact
-        if (api.distanceTo(targetTree) > 1) {
+        // If too far, walk to it first
+        if (dist > 2) {
             state = State.WALKING_TO_TREE;
             api.walkTo(targetTree.getX(), targetTree.getY());
             return random(600, 1000);
         }
         
-        // Chop the tree
+        // We're close enough - chop the tree
         state = State.CHOPPING;
         api.interactObject(targetTree);
+        treesChopped++;
         
-        return random(1500, 2500);
+        // Show status every 10 trees
+        if (treesChopped % 10 == 0) {
+            gameMessage("@gre@[Bot] Chopped " + treesChopped + " trees, banked " + logsChopped + " logs");
+        }
+        
+        return random(2000, 3000);
     }
     
     private int bankLogs() {

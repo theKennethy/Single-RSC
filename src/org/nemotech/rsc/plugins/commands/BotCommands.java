@@ -4,6 +4,7 @@ import org.nemotech.rsc.model.player.Player;
 import org.nemotech.rsc.plugins.Plugin;
 import org.nemotech.rsc.plugins.listeners.action.CommandListener;
 import org.nemotech.rsc.bot.Bot;
+import org.nemotech.rsc.bot.BotAPI;
 import org.nemotech.rsc.bot.BotManager;
 import org.nemotech.rsc.bot.scripts.*;
 
@@ -34,8 +35,21 @@ import org.nemotech.rsc.bot.scripts.*;
  * - ::fletch - Fletching
  * - ::craft [mode] - Crafting (leather/spinning/pottery)
  * - ::herblaw [mode] - Herblaw (identify/potions)
+ * - ::debugobjects [radius] - List nearby objects (for finding IDs)
  */
 public class BotCommands extends Plugin implements CommandListener {
+    
+    public String[] getCommands() {
+        return new String[] { 
+            "bot", "woodcut", "wc", "fish", "combat", "fight", 
+            "mine", "mining", "agility", "agil", "cook", "cooking",
+            "firemaking", "fm", "thieve", "thieving", "pickpocket",
+            "prayer", "pray", "ranged", "range", "magic", "mage",
+            "smith", "smithing", "fletch", "fletching", "craft", "crafting",
+            "herblaw", "herblore",
+            "debugobjects", "listobjects"
+        };
+    }
     
     @Override
     public void onCommand(String command, String[] args, Player player) {
@@ -43,6 +57,13 @@ public class BotCommands extends Plugin implements CommandListener {
         // Main bot command
         if (command.equals("bot")) {
             handleBotCommand(args, player);
+            return;
+        }
+        
+        // Debug command to list nearby objects
+        if (command.equals("debugobjects") || command.equals("listobjects")) {
+            int radius = args.length > 0 ? Integer.parseInt(args[0]) : 15;
+            BotAPI.getInstance().debugListNearbyObjects(radius);
             return;
         }
         
@@ -262,23 +283,23 @@ public class BotCommands extends Plugin implements CommandListener {
         
         switch (type) {
             case "oak":
-                treeIds = new int[] { 307 };
+                treeIds = new int[] { 306 };
                 logIds = new int[] { 632 };
                 break;
             case "willow":
-                treeIds = new int[] { 308 };
+                treeIds = new int[] { 307 };
                 logIds = new int[] { 633 };
                 break;
             case "maple":
-                treeIds = new int[] { 309 };
+                treeIds = new int[] { 308 };
                 logIds = new int[] { 634 };
                 break;
             case "yew":
-                treeIds = new int[] { 310 };
+                treeIds = new int[] { 309 };
                 logIds = new int[] { 635 };
                 break;
             case "magic":
-                treeIds = new int[] { 311 };
+                treeIds = new int[] { 310 };
                 logIds = new int[] { 636 };
                 break;
             case "normal":

@@ -554,7 +554,7 @@ public class BotAPI {
     public GameObject getNearestObject(int... ids) {
         GameObject nearest = null;
         int nearestDist = Integer.MAX_VALUE;
-        int searchRadius = 50;
+        int searchRadius = 100;
         
         // Get all objects from surrounding regions (no distance filter)
         for (GameObject obj : RegionManager.getLocalObjects(getPlayer())) {
@@ -602,6 +602,28 @@ public class BotAPI {
             }
         }
         return nearest;
+    }
+    
+    /**
+     * Debug method: Lists all objects in range and their IDs.
+     * Useful for finding correct object IDs.
+     */
+    public void debugListNearbyObjects(int radius) {
+        Player player = getPlayer();
+        player.getSender().sendMessage("@yel@[Debug] Listing objects within " + radius + " tiles:");
+        
+        int count = 0;
+        // Check RegionManager objects
+        for (GameObject obj : RegionManager.getLocalObjects(player)) {
+            if (obj == null || obj.isRemoved()) continue;
+            int dist = distanceTo(obj);
+            if (dist <= radius) {
+                String name = obj.getGameObjectDef() != null ? obj.getGameObjectDef().getName() : "Unknown";
+                player.getSender().sendMessage("@cya@  ID=" + obj.getID() + " '" + name + "' at (" + obj.getX() + "," + obj.getY() + ") dist=" + dist);
+                count++;
+            }
+        }
+        player.getSender().sendMessage("@yel@[Debug] Found " + count + " objects via RegionManager");
     }
     
     /**
