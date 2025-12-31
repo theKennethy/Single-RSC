@@ -13,11 +13,11 @@ import org.nemotech.rsc.model.GameObject;
  * 
  * Tree Object IDs:
  * - Regular Tree: 0, 1, 70
- * - Oak Tree: 306
- * - Willow Tree: 307
- * - Maple Tree: 308
- * - Yew Tree: 309
- * - Magic Tree: 310
+ * - Oak Tree: 307
+ * - Willow Tree: 308
+ * - Maple Tree: 309
+ * - Yew Tree: 310
+ * - Magic Tree: 311
  * 
  * Log Item IDs:
  * - Logs: 14

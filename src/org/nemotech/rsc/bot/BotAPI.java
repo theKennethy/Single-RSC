@@ -549,24 +549,55 @@ public class BotAPI {
     
     /**
      * Finds the nearest game object by ID.
-     * Uses RegionManager to get all local objects for better reliability.
+     * Searches all objects in surrounding regions with a configurable radius.
      */
     public GameObject getNearestObject(int... ids) {
         GameObject nearest = null;
         int nearestDist = Integer.MAX_VALUE;
+        int searchRadius = 50;
         
-        // Use RegionManager to get all local objects - this is more reliable
+        // Get all objects from surrounding regions (no distance filter)
         for (GameObject obj : RegionManager.getLocalObjects(getPlayer())) {
             if (obj == null || obj.isRemoved()) continue;
             
+            // Apply our own distance check
+            int dist = distanceTo(obj);
+            if (dist > searchRadius) continue;
+            
             for (int id : ids) {
                 if (obj.getID() == id) {
-                    int dist = distanceTo(obj);
                     if (dist < nearestDist) {
                         nearestDist = dist;
                         nearest = obj;
                     }
                     break;
+                }
+            }
+        }
+        
+        // Fallback: also check via tile-based search
+        if (nearest == null) {
+            for (int dx = -searchRadius; dx <= searchRadius; dx++) {
+                for (int dy = -searchRadius; dy <= searchRadius; dy++) {
+                    int x = getX() + dx;
+                    int y = getY() + dy;
+                    
+                    ActiveTile tile = World.getWorld().getTile(x, y);
+                    if (tile == null || !tile.hasGameObject()) continue;
+                    
+                    GameObject obj = tile.getGameObject();
+                    if (obj == null || obj.isRemoved()) continue;
+                    
+                    for (int id : ids) {
+                        if (obj.getID() == id) {
+                            int dist = distanceTo(obj);
+                            if (dist < nearestDist) {
+                                nearestDist = dist;
+                                nearest = obj;
+                            }
+                            break;
+                        }
+                    }
                 }
             }
         }
