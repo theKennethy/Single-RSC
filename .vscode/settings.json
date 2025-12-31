@@ -1,0 +1,9 @@
+{
+    "java.problems.incompleteClasspath.severity": "ignore",
+    "java.warnings.incompleteClasspath.severity": "ignore", 
+    "java.compile.nullAnalysis.mode": "disabled",
+    "java.codeGeneration.useBlocks": true,
+    "java.settings.url": "",
+    "java.errors.incompleteClasspath.severity": "ignore",
+    "problems.decorations.enabled": false
+}
