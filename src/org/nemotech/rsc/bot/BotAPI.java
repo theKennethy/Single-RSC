@@ -8,6 +8,7 @@ import org.nemotech.rsc.model.landscape.RegionManager;
 import org.nemotech.rsc.external.EntityManager;
 import org.nemotech.rsc.external.definition.*;
 import org.nemotech.rsc.client.mudclient;
+import org.nemotech.rsc.client.Terrain;
 import org.nemotech.rsc.client.action.ActionManager;
 import org.nemotech.rsc.client.action.impl.*;
 import org.nemotech.rsc.util.EntityList;
@@ -136,11 +137,107 @@ public class BotAPI {
     // ==================== WALKING METHODS ====================
     
     /**
-     * Walks to a specific location.
+     * Walks to a specific location using proper pathfinding that respects walls and buildings.
+     * @param x The target X coordinate (world coordinates)
+     * @param y The target Y coordinate (world coordinates)
+     * @return true if a path was found and walking started, false otherwise
+     */
+    public boolean walkTo(int x, int y) {
+        Player player = getPlayer();
+        if (player.isBusy()) {
+            return false;
+        }
+        
+        mudclient client = mudclient.getInstance();
+        if (client == null || client.world == null) {
+            // Fallback to simple path if client not available
+            Path path = new Path(player.getX(), player.getY(), x, y);
+            player.setPath(path);
+            return true;
+        }
+        
+        // Convert world coordinates to local coordinates
+        int localStartX = player.getX() - client.regionX;
+        int localStartY = player.getY() - client.regionY;
+        int localDestX = x - client.regionX;
+        int localDestY = y - client.regionY;
+        
+        // Check if destination is within the current loaded region (96x96)
+        if (localDestX < 0 || localDestX >= 96 || localDestY < 0 || localDestY >= 96) {
+            // Destination is outside current region, walk towards edge
+            localDestX = Math.max(0, Math.min(95, localDestX));
+            localDestY = Math.max(0, Math.min(95, localDestY));
+        }
+        
+        // Use the game's pathfinding
+        int[] walkPathX = new int[8000];
+        int[] walkPathY = new int[8000];
+        
+        int steps = client.world.getStepCount(localStartX, localStartY, localDestX, localDestY, localDestX, localDestY, walkPathX, walkPathY, false);
+        
+        if (steps == -1) {
+            // No path found, try walking to adjacent tile
+            // Try each adjacent tile to find one we can reach
+            int[][] offsets = {{0, -1}, {0, 1}, {-1, 0}, {1, 0}, {-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
+            for (int[] offset : offsets) {
+                int adjX = localDestX + offset[0];
+                int adjY = localDestY + offset[1];
+                if (adjX >= 0 && adjX < 96 && adjY >= 0 && adjY < 96) {
+                    steps = client.world.getStepCount(localStartX, localStartY, adjX, adjY, adjX, adjY, walkPathX, walkPathY, false);
+                    if (steps != -1) {
+                        break;
+                    }
+                }
+            }
+            
+            if (steps == -1) {
+                // Still no path, use simple fallback
+                Path path = new Path(player.getX(), player.getY(), x, y);
+                player.setPath(path);
+                return false;
+            }
+        }
+        
+        // Build waypoint arrays
+        steps--;
+        int startX = walkPathX[steps];
+        int startY = walkPathY[steps];
+        steps--;
+        
+        if (steps < 0) {
+            steps = 0;
+        }
+        
+        byte[] xWaypoints = new byte[steps + 1];
+        byte[] yWaypoints = new byte[steps + 1];
+        for (int i = steps; i >= 0 && i > steps - 25; i--) {
+            xWaypoints[i] = (byte) (walkPathX[i] - startX);
+            yWaypoints[i] = (byte) (walkPathY[i] - startY);
+        }
+        
+        // Reverse waypoints
+        for (int i = 0; i < xWaypoints.length / 2; i++) {
+            byte temp = xWaypoints[i];
+            xWaypoints[i] = xWaypoints[xWaypoints.length - i - 1];
+            xWaypoints[xWaypoints.length - i - 1] = temp;
+        }
+        for (int i = 0; i < yWaypoints.length / 2; i++) {
+            byte temp = yWaypoints[i];
+            yWaypoints[i] = yWaypoints[yWaypoints.length - i - 1];
+            yWaypoints[yWaypoints.length - i - 1] = temp;
+        }
+        
+        // Use WalkHandler to properly set the path
+        ActionManager.get(WalkHandler.class).handleWalk(startX + client.regionX, startY + client.regionY, xWaypoints, yWaypoints, false);
+        return true;
+    }
+    
+    /**
+     * Simple walk without pathfinding (for short distances with no obstacles).
      * @param x The target X coordinate
      * @param y The target Y coordinate
      */
-    public void walkTo(int x, int y) {
+    public void walkToSimple(int x, int y) {
         Player player = getPlayer();
         if (player.isBusy()) {
             return;
