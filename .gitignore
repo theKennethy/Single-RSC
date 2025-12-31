@@ -2,8 +2,9 @@
 bin/
 *.class
 
-# JAR files (generated)
+# JAR files (generated) - except our main jar
 *.jar
+!Single-RSC.jar
 
 # IDE files
 .idea/
