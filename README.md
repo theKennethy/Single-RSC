@@ -12,6 +12,7 @@ RSC Single Player is a standalone RuneScape Classic reproduction and sandbox: a 
 - [Quick Start](#quick-start)
 - [Gameplay Notes](#gameplay-notes)
 - [Commands & Utilities](#commands--utilities)
+- [Bot System](#bot-system)
 - [Hardcore Mode](#hardcore-mode)
 - [Experience Rates](#experience-rates)
 - [Skill Batching System](#skill-batching-system)
@@ -86,6 +87,75 @@ Tip: To test administrator shortcuts, create a user named exactly `root` (case s
 | (Admin/root) Mini-map right-click | Teleport utility for quick navigation. |
 
 (If you would like a published list of `::tele` area codes, we can add one—just ask.)
+
+---
+
+## Bot System
+
+RSC Single Player includes a comprehensive bot system that can automate training for all 18 skills. Bots will automatically bank collected resources and handle common tasks like eating food during combat.
+
+### Bot Commands
+
+| Command | Description |
+|---------|-------------|
+| `::bothelp` | Shows all available bot commands |
+| `::stopbot` | Stops the currently running bot |
+| `::pausebot` | Pauses the current bot |
+| `::resumebot` | Resumes a paused bot |
+| `::botstatus` | Shows current bot status and statistics |
+
+### Available Bots
+
+#### Combat Bots
+| Command | Skills Trained | Description |
+|---------|----------------|-------------|
+| `::combat <npc>` | Attack, Defense, Strength, Hits | Melee combat training |
+| `::ranged <npc>` | Ranged, Hits | Ranged combat training |
+| `::magic <npc> <spell>` | Magic, Hits | Magic combat training |
+| `::prayer <bones>` | Prayer | Buries bones (normal/big/dragon) |
+
+#### Gathering Bots
+| Command | Skill | Description |
+|---------|-------|-------------|
+| `::woodcut <tree>` | Woodcutting | Cuts trees and banks logs |
+| `::fish <type>` | Fishing | Catches fish and banks them |
+| `::mine <ore>` | Mining | Mines ore and banks it |
+
+#### Production Bots
+| Command | Skill | Description |
+|---------|-------|-------------|
+| `::cook <food>` | Cooking | Cooks raw food on ranges |
+| `::fm <log>` | Firemaking | Burns logs for firemaking XP |
+| `::smith <bar>` | Smithing | Smiths bars on anvils |
+| `::fletch <log>` | Fletching | Fletches logs into bows/arrows |
+| `::craft <mode> <item>` | Crafting | Leather work, spinning, pottery |
+| `::herblaw <mode> <herb>` | Herblaw | Identify herbs or make potions |
+
+#### Support Bots
+| Command | Skill | Description |
+|---------|-------|-------------|
+| `::agility <course>` | Agility | Runs agility courses (gnome/barbarian/wilderness) |
+| `::thieve <target>` | Thieving | Pickpockets NPCs or steals from stalls |
+
+### Bot Examples
+
+```
+::woodcut willow       - Cuts willow trees
+::fish lobster         - Catches lobsters
+::mine iron            - Mines iron ore
+::combat goblin        - Fights goblins
+::agility gnome        - Runs the Gnome Agility Course
+::cook lobster         - Cooks raw lobsters
+::prayer dragon        - Buries dragon bones
+::craft leather gloves - Crafts leather gloves
+::herblaw identify     - Identifies unidentified herbs
+```
+
+### Bot Features
+- **Auto-banking:** All gathering bots automatically bank collected resources
+- **Food support:** Combat bots eat food when health is low
+- **Statistics:** Track items collected, XP gained, and time running
+- **Pause/Resume:** Temporarily pause bots without losing progress
 
 ---
 
