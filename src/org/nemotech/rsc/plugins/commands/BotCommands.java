@@ -257,25 +257,28 @@ public class BotCommands extends Plugin implements CommandListener {
         int[] logIds;
         String type = args.length > 0 ? args[0].toLowerCase() : "normal";
         
+        // Debug: show what type was parsed
+        player.getSender().sendMessage("@yel@[Debug] Parsed tree type: '" + type + "'");
+        
         switch (type) {
             case "oak":
-                treeIds = new int[] { 307 };
+                treeIds = new int[] { 306 };
                 logIds = new int[] { 632 };
                 break;
             case "willow":
-                treeIds = new int[] { 308 };
+                treeIds = new int[] { 307 };
                 logIds = new int[] { 633 };
                 break;
             case "maple":
-                treeIds = new int[] { 309 };
+                treeIds = new int[] { 308 };
                 logIds = new int[] { 634 };
                 break;
             case "yew":
-                treeIds = new int[] { 310 };
+                treeIds = new int[] { 309 };
                 logIds = new int[] { 635 };
                 break;
             case "magic":
-                treeIds = new int[] { 311 };
+                treeIds = new int[] { 310 };
                 logIds = new int[] { 636 };
                 break;
             case "normal":
