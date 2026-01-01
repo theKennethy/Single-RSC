@@ -106,17 +106,17 @@ public class WoodcuttingBot extends Bot {
                 gameMessage("@red@Fatigue full! Use ::sleep or a bed.");
                 lastStatusTime = System.currentTimeMillis();
             }
-            return 5000;
+            return 100;
         }
         
         // Don't do anything if busy (chopping, walking, etc)
         if (api.isBusy()) {
-            return random(300, 500);
+            return 50;
         }
         
         // If we're walking, wait until we stop
         if (api.isMoving()) {
-            return random(300, 500);
+            return 50;
         }
         
         // If we're chopping, check if we should continue or find a new tree
@@ -137,7 +137,7 @@ public class WoodcuttingBot extends Bot {
         // Close bank if it's open and we're not full
         if (api.isBankOpen()) {
             api.closeBank();;
-            return random(300, 500);
+            return 100;
         }
         
         // Find and chop a tree
@@ -156,7 +156,7 @@ public class WoodcuttingBot extends Bot {
                 log("Searching for trees... IDs: " + arrayToString(treeIds));
                 lastStatusTime = System.currentTimeMillis();
             }
-            return random(1000, 2000);
+            return 100;
         }
         
         int dist = api.distanceTo(tree);
@@ -166,7 +166,7 @@ public class WoodcuttingBot extends Bot {
             state = State.WALKING_TO_TREE;
             targetTree = tree;
             api.walkTo(tree.getX(), tree.getY());
-            return random(600, 1000);
+            return 100;
         }
         
         // We're close enough - chop the tree
@@ -180,14 +180,14 @@ public class WoodcuttingBot extends Bot {
             gameMessage("@gre@[Bot] Chopped " + treesChopped + " trees, banked " + logsChopped + " logs");
         }
         
-        return random(2000, 3000);
+        return 100;
     }
     
     private int bankLogs() {
         // Open bank if not already open
         if (!api.isBankOpen()) {
             api.openBank();
-            return random(600, 800);
+            return 100;
         }
         
         // Deposit all logs
@@ -196,14 +196,14 @@ public class WoodcuttingBot extends Bot {
             if (count > 0) {
                 api.depositItem(logId, count);
                 logsChopped += count;
-                return random(300, 500);
+                return 100;
             }
         }
         
         // Done banking, close bank and continue
         api.closeBank();
         state = State.IDLE;
-        return random(300, 500);
+        return 100;
     }
     
     private int countLogs() {
