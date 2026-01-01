@@ -102,27 +102,22 @@ public class WoodcuttingBot extends Bot {
     public int loop() {
         // Check if we need to sleep
         if (api.needsSleep()) {
-            if (System.currentTimeMillis() - lastStatusTime > 10000) {
-                gameMessage("@red@Fatigue full! Use ::sleep or a bed.");
-                lastStatusTime = System.currentTimeMillis();
-            }
-            return 100;
+            gameMessage("@red@Fatigue full! Use ::sleep or a bed.");
+            return 10;
         }
         
         // Don't do anything if busy (chopping, walking, etc)
         if (api.isBusy()) {
-            return 50;
+            return 10;
         }
         
         // If we're walking, wait until we stop
         if (api.isMoving()) {
-            return 50;
+            return 10;
         }
         
         // If we're chopping, check if we should continue or find a new tree
         if (state == State.CHOPPING) {
-            // If we're not busy anymore, the chop attempt finished (success or fail)
-            // Reset to IDLE so we can try again or find a new tree
             state = State.IDLE;
             targetTree = null;
         }
@@ -137,7 +132,7 @@ public class WoodcuttingBot extends Bot {
         // Close bank if it's open and we're not full
         if (api.isBankOpen()) {
             api.closeBank();;
-            return 100;
+            return 10;
         }
         
         // Find and chop a tree
@@ -151,12 +146,7 @@ public class WoodcuttingBot extends Bot {
         if (tree == null || tree.isRemoved()) {
             state = State.IDLE;
             targetTree = null;
-            // Only log occasionally to reduce spam
-            if (System.currentTimeMillis() - lastStatusTime > 5000) {
-                log("Searching for trees... IDs: " + arrayToString(treeIds));
-                lastStatusTime = System.currentTimeMillis();
-            }
-            return 100;
+            return 10;
         }
         
         int dist = api.distanceTo(tree);
@@ -166,7 +156,7 @@ public class WoodcuttingBot extends Bot {
             state = State.WALKING_TO_TREE;
             targetTree = tree;
             api.walkTo(tree.getX(), tree.getY());
-            return 100;
+            return 10;
         }
         
         // We're close enough - chop the tree
@@ -175,19 +165,14 @@ public class WoodcuttingBot extends Bot {
         api.interactObject(tree);
         treesChopped++;
         
-        // Show status every 10 trees
-        if (treesChopped % 10 == 0) {
-            gameMessage("@gre@[Bot] Chopped " + treesChopped + " trees, banked " + logsChopped + " logs");
-        }
-        
-        return 100;
+        return 10;
     }
     
     private int bankLogs() {
         // Open bank if not already open
         if (!api.isBankOpen()) {
             api.openBank();
-            return 100;
+            return 10;
         }
         
         // Deposit all logs
@@ -196,14 +181,13 @@ public class WoodcuttingBot extends Bot {
             if (count > 0) {
                 api.depositItem(logId, count);
                 logsChopped += count;
-                return 100;
             }
         }
         
         // Done banking, close bank and continue
         api.closeBank();
         state = State.IDLE;
-        return 100;
+        return 10;
     }
     
     private int countLogs() {
