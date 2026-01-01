@@ -119,16 +119,12 @@ public class WoodcuttingBot extends Bot {
             return random(300, 500);
         }
         
-        // If we're chopping, check if the tree is still there
+        // If we're chopping, check if we should continue or find a new tree
         if (state == State.CHOPPING) {
-            // Tree got cut down or we finished, go back to idle
-            if (targetTree == null || targetTree.isRemoved()) {
-                state = State.IDLE;
-                targetTree = null;
-            } else {
-                // Still chopping, wait
-                return random(500, 1000);
-            }
+            // If we're not busy anymore, the chop attempt finished (success or fail)
+            // Reset to IDLE so we can try again or find a new tree
+            state = State.IDLE;
+            targetTree = null;
         }
         
         // Handle banking logs when inventory is full
