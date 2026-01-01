@@ -109,25 +109,38 @@ public class WoodcuttingBot extends Bot {
             return 5000;
         }
         
-        // Don't do anything if busy
+        // Don't do anything if busy (chopping, walking, etc)
         if (api.isBusy()) {
             return random(300, 500);
         }
         
-        // If we're walking to a tree, wait until we get there
-        if (state == State.WALKING_TO_TREE && api.isMoving()) {
+        // If we're walking, wait until we stop
+        if (api.isMoving()) {
             return random(300, 500);
+        }
+        
+        // If we're chopping, check if the tree is still there
+        if (state == State.CHOPPING) {
+            // Tree got cut down or we finished, go back to idle
+            if (targetTree == null || targetTree.isRemoved()) {
+                state = State.IDLE;
+                targetTree = null;
+            } else {
+                // Still chopping, wait
+                return random(500, 1000);
+            }
         }
         
         // Handle banking logs when inventory is full
         if (api.isInventoryFull()) {
             state = State.BANKING;
+            targetTree = null;
             return bankLogs();
         }
         
         // Close bank if it's open and we're not full
         if (api.isBankOpen()) {
-            api.closeBank();
+            api.closeBank();;
             return random(300, 500);
         }
         
@@ -136,11 +149,12 @@ public class WoodcuttingBot extends Bot {
     }
     
     private int chopTree() {
-        // Find nearest tree (that isn't a stump - check if removed)
-        targetTree = api.getNearestObject(treeIds);
+        // Find nearest tree
+        GameObject tree = api.getNearestObject(treeIds);
         
-        if (targetTree == null || targetTree.isRemoved()) {
+        if (tree == null || tree.isRemoved()) {
             state = State.IDLE;
+            targetTree = null;
             // Only log occasionally to reduce spam
             if (System.currentTimeMillis() - lastStatusTime > 5000) {
                 log("Searching for trees... IDs: " + arrayToString(treeIds));
@@ -149,18 +163,20 @@ public class WoodcuttingBot extends Bot {
             return random(1000, 2000);
         }
         
-        int dist = api.distanceTo(targetTree);
+        int dist = api.distanceTo(tree);
         
         // If too far, walk to it first
         if (dist > 2) {
             state = State.WALKING_TO_TREE;
-            api.walkTo(targetTree.getX(), targetTree.getY());
+            targetTree = tree;
+            api.walkTo(tree.getX(), tree.getY());
             return random(600, 1000);
         }
         
         // We're close enough - chop the tree
         state = State.CHOPPING;
-        api.interactObject(targetTree);
+        targetTree = tree;
+        api.interactObject(tree);
         treesChopped++;
         
         // Show status every 10 trees
