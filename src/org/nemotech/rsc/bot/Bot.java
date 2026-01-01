@@ -119,9 +119,11 @@ public abstract class Bot {
                     this.setDelay(delay);
                     
                 } catch (Exception e) {
+                    // Log error but keep running
                     log("Error in bot loop: " + e.getMessage());
                     e.printStackTrace();
-                    Bot.this.stop();
+                    // Don't stop - just wait and try again
+                    this.setDelay(1000);
                 }
             }
         };
