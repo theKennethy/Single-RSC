@@ -134,6 +134,29 @@ public class BotAPI {
         return getFatigue() >= 99;
     }
     
+    /**
+     * Resets the player's fatigue to 0.
+     * This is a single-player convenience method.
+     */
+    public void resetFatigue() {
+        Player player = getPlayer();
+        player.setFatigue(0);
+        player.getSender().sendFatigue(0);
+    }
+    
+    /**
+     * Checks if fatigue is high and resets it if so.
+     * Call this in bot loops to automatically handle fatigue.
+     * @return true if fatigue was reset, false if it was fine
+     */
+    public boolean handleFatigue() {
+        if (getFatigue() >= 95) {
+            resetFatigue();
+            return true;
+        }
+        return false;
+    }
+    
     // ==================== WALKING METHODS ====================
     
     /**

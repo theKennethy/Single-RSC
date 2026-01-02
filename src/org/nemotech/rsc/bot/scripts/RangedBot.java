@@ -74,12 +74,6 @@ public class RangedBot extends Bot {
     
     @Override
     public int loop() {
-        // Check if we need to sleep
-        if (api.needsSleep()) {
-            gameMessage("Fatigue is full! Please sleep.");
-            return 5000;
-        }
-        
         // Check HP and eat if needed
         int hpPercent = (api.getCurrentLevel(3) * 100) / api.getLevel(3);
         if (hpPercent <= eatAtPercent) {

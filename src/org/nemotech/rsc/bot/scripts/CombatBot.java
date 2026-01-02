@@ -135,12 +135,6 @@ public class CombatBot extends Bot {
     
     @Override
     public int loop() {
-        // Check if we need to sleep
-        if (api.needsSleep()) {
-            gameMessage("Fatigue is full! Please sleep.");
-            return 5000;
-        }
-        
         // Check if we need to eat
         if (shouldEat()) {
             return eat();

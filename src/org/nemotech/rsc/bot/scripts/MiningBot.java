@@ -100,12 +100,6 @@ public class MiningBot extends Bot {
     
     @Override
     public int loop() {
-        // Check if we need to sleep
-        if (api.needsSleep()) {
-            gameMessage("Fatigue is full! Please sleep.");
-            return 5000;
-        }
-        
         // Don't do anything if busy
         if (api.isBusy() || api.isMoving()) {
             return random(300, 500);

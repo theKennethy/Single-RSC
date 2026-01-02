@@ -100,12 +100,6 @@ public class WoodcuttingBot extends Bot {
     
     @Override
     public int loop() {
-        // Check if we need to sleep
-        if (api.needsSleep()) {
-            gameMessage("@red@Fatigue full! Use ::sleep or a bed.");
-            return 10;
-        }
-        
         // Don't do anything if busy (chopping, walking, etc)
         if (api.isBusy()) {
             return 10;
