@@ -120,6 +120,10 @@ public abstract class Mob extends Entity {
      * ID for our current appearance, used client side to detect changed
      */
     protected int appearanceID = 0;
+    private static final long BUSY_FLAG_TIMEOUT = 60000;
+
+    private long busyFlagSetTime = 0;
+
     /**
      * Used to block new requests when we are in the middle of one
      */
@@ -264,8 +268,12 @@ public abstract class Mob extends Entity {
      * Time in MS when we are freed from the 'busy' mode.
      */
     protected long busyTimer;
-    
+
     public boolean isBusy() {
+        if (busy && System.currentTimeMillis() - busyFlagSetTime > BUSY_FLAG_TIMEOUT) {
+            busy = false;
+            busyFlagSetTime = 0;
+        }
         return busyTimer - System.currentTimeMillis() > 0 || busy;
     }
 
@@ -320,7 +328,13 @@ public abstract class Mob extends Entity {
     }
 
     public void setBusy(boolean busy) {
-        this.busy = busy;
+        if (busy) {
+            this.busy = true;
+            this.busyFlagSetTime = System.currentTimeMillis();
+        } else {
+            this.busy = false;
+            this.busyFlagSetTime = 0;
+        }
     }
 
     public void setCombatLevel(int level) {
