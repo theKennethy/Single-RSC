@@ -97,6 +97,8 @@ public class WoodcuttingBot extends Bot {
     
     private long lastStatusTime = 0;
     private int treesChopped = 0;
+    private int emptyTreeSearchCount = 0;
+    private int consecutiveBankFailures = 0;
     
     @Override
     public int loop() {
@@ -114,6 +116,7 @@ public class WoodcuttingBot extends Bot {
         if (state == State.CHOPPING) {
             state = State.IDLE;
             targetTree = null;
+            return chopTree();
         }
         
         // Handle banking logs when inventory is full
@@ -140,8 +143,16 @@ public class WoodcuttingBot extends Bot {
         if (tree == null || tree.isRemoved()) {
             state = State.IDLE;
             targetTree = null;
-            return 10;
+            emptyTreeSearchCount++;
+            
+            if (emptyTreeSearchCount > 5) {
+                gameMessage("No trees found nearby, searching...");
+                emptyTreeSearchCount = 0;
+            }
+            return random(500, 1500);
         }
+        
+        emptyTreeSearchCount = 0;
         
         int dist = api.distanceTo(tree);
         
@@ -166,7 +177,14 @@ public class WoodcuttingBot extends Bot {
         // Open bank if not already open
         if (!api.isBankOpen()) {
             api.openBank();
-            return 10;
+            consecutiveBankFailures++;
+            if (consecutiveBankFailures > 3) {
+                gameMessage("@red@Bank command failed, continuing to chop...");
+                consecutiveBankFailures = 0;
+                state = State.IDLE;
+                return random(500, 1000);
+            }
+            return random(800, 1200);
         }
         
         // Deposit all logs
@@ -179,6 +197,7 @@ public class WoodcuttingBot extends Bot {
         }
         
         // Done banking, close bank and continue
+        consecutiveBankFailures = 0;
         api.closeBank();
         state = State.IDLE;
         return 10;

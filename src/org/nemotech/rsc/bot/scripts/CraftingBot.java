@@ -91,19 +91,28 @@ public class CraftingBot extends Bot {
         gameMessage("Crafting bot stopped. Items crafted: " + itemsCrafted);
     }
     
+
+    private long lastStatusTime = 0;
+    private int consecutiveBankFailures = 0;
+
     @Override
     public int loop() {
         // Don't do anything if busy
         if (api.isBusy() || api.isMoving()) {
             return random(300, 500);
         }
-        
+
+        // Handle crafting state reset
+        if (state == State.CRAFTING) {
+            state = State.IDLE;
+        }
+
         // Close bank if open
         if (api.isBankOpen()) {
             api.closeBank();
             return random(300, 500);
         }
-        
+
         switch (mode) {
             case LEATHER:
                 return craftLeather();
@@ -194,26 +203,35 @@ public class CraftingBot extends Bot {
     private int handleBanking(int itemId) {
         if (!api.isBankOpen()) {
             api.openBank();
-            return random(600, 800);
+            consecutiveBankFailures++;
+            if (consecutiveBankFailures > 3) {
+                gameMessage("@red@Bank command failed, continuing to craft...");
+                consecutiveBankFailures = 0;
+                state = State.IDLE;
+                return random(500, 1000);
+            }
+            return random(800, 1200);
         }
-        
+
         // Deposit crafted items
         api.depositAll();
-        
+
         // Keep needle if needed
         if (mode == Mode.LEATHER && api.getBankCount(NEEDLE) > 0) {
             api.withdrawItem(NEEDLE, 1);
         }
-        
+
         // Withdraw materials
         int bankCount = api.getBankCount(itemId);
         if (bankCount > 0) {
             api.withdrawItem(itemId, Math.min(bankCount, 27));
+            consecutiveBankFailures = 0;
             api.closeBank();
             state = State.IDLE;
             return random(600, 800);
         }
-        
+
+        consecutiveBankFailures = 0;
         gameMessage("Out of materials! Please add more to your bank.");
         api.closeBank();
         return random(5000, 6000);

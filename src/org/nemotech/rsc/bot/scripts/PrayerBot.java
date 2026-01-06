@@ -63,13 +63,22 @@ public class PrayerBot extends Bot {
         gameMessage("Prayer bot stopped. Total bones buried: " + bonesBuried);
     }
     
+
+    private long lastStatusTime = 0;
+    private int consecutiveBankFailures = 0;
+
     @Override
     public int loop() {
         // Don't do anything if busy
         if (api.isBusy() || api.isMoving()) {
             return random(300, 500);
         }
-        
+
+        // Handle burying state reset
+        if (state == State.BURYING) {
+            state = State.IDLE;
+        }
+
         // Find bones to bury
         int boneIndex = -1;
         for (int id : boneIds) {
@@ -79,45 +88,55 @@ public class PrayerBot extends Bot {
                 break;
             }
         }
-        
+
         // No bones - go bank
         if (boneIndex < 0) {
             state = State.BANKING;
             return handleBanking();
         }
-        
+
         // Close bank if open
         if (api.isBankOpen()) {
             api.closeBank();
             return random(300, 500);
         }
-        
+
         // Bury the bones (use item action)
         state = State.BURYING;
         api.useItem(boneIndex);
         bonesBuried++;
-        
+
         return random(600, 1000);
     }
     
     private int handleBanking() {
         if (!api.isBankOpen()) {
             api.openBank();
-            return random(600, 800);
+            consecutiveBankFailures++;
+            if (consecutiveBankFailures > 3) {
+                gameMessage("@red@Bank command failed, continuing to bury bones...");
+                consecutiveBankFailures = 0;
+                state = State.IDLE;
+                return random(500, 1000);
+            }
+            return random(800, 1200);
         }
-        
+
         // Try to withdraw bones
         for (int boneId : boneIds) {
             int bankCount = api.getBankCount(boneId);
             if (bankCount > 0) {
                 api.withdrawItem(boneId, Math.min(bankCount, 28));
+                consecutiveBankFailures = 0;
                 api.closeBank();
                 state = State.IDLE;
                 return random(600, 800);
             }
         }
-        
+
+        consecutiveBankFailures = 0;
         gameMessage("Out of bones! Please add more to your bank.");
+        api.closeBank();
         return random(5000, 6000);
     }
     

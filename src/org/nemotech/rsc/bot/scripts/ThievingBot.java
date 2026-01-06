@@ -76,31 +76,43 @@ public class ThievingBot extends Bot {
         gameMessage("Thieving bot stopped. Successful: " + successfulPickpockets + ", Failed: " + failedPickpockets);
     }
     
+
+    private long lastStatusTime = 0;
+    private int npcsSearched = 0;
+    private int emptyNpcSearchCount = 0;
+    private int consecutiveBankFailures = 0;
+
     @Override
     public int loop() {
         // Don't do anything if busy or in combat
         if (api.isBusy() || api.isMoving()) {
             return random(300, 500);
         }
-        
+
         // Check if in combat (got caught)
         if (api.isInCombat()) {
             failedPickpockets++;
+            state = State.IDLE;
             return random(1000, 2000); // Wait for combat to end
         }
-        
+
+        // Handle pickpocket state reset
+        if (state == State.PICKPOCKETING) {
+            state = State.IDLE;
+        }
+
         // Bank if inventory is full
         if (api.isInventoryFull()) {
             state = State.BANKING;
             return handleBanking();
         }
-        
+
         // Close bank if open
         if (api.isBankOpen()) {
             api.closeBank();
             return random(300, 500);
         }
-        
+
         // Find target NPC
         return pickpocketNpc();
     }
@@ -112,7 +124,7 @@ public class ThievingBot extends Bot {
         
         for (int npcId : targetNpcIds) {
             NPC npc = api.getNearestNPC(npcId);
-            if (npc != null) {
+            if (npc != null && !npc.isRemoved()) {
                 int dist = api.distanceTo(npc);
                 if (dist < nearestDist) {
                     nearestDist = dist;
@@ -122,9 +134,17 @@ public class ThievingBot extends Bot {
         }
         
         if (target == null) {
-            log("No target NPCs found nearby!");
-            return random(2000, 3000);
+            state = State.IDLE;
+            emptyNpcSearchCount++;
+            
+            if (emptyNpcSearchCount > 5) {
+                gameMessage("No target NPCs found nearby, searching...");
+                emptyNpcSearchCount = 0;
+            }
+            return random(500, 1500);
         }
+        
+        emptyNpcSearchCount = 0;
         
         // Walk to NPC if too far
         if (nearestDist > 1) {
@@ -137,6 +157,7 @@ public class ThievingBot extends Bot {
         state = State.PICKPOCKETING;
         api.thieveNPC(target);
         successfulPickpockets++;
+        npcsSearched++;
         
         return random(1500, 2500);
     }
@@ -145,13 +166,21 @@ public class ThievingBot extends Bot {
         // Open bank if not already open
         if (!api.isBankOpen()) {
             api.openBank();
-            return random(600, 800);
+            consecutiveBankFailures++;
+            if (consecutiveBankFailures > 3) {
+                gameMessage("@red@Bank command failed, continuing to thieve...");
+                consecutiveBankFailures = 0;
+                state = State.IDLE;
+                return random(500, 1000);
+            }
+            return random(800, 1200);
         }
         
         // Deposit all items
         api.depositAll();
         
         // Close bank and continue
+        consecutiveBankFailures = 0;
         api.closeBank();
         state = State.IDLE;
         return random(300, 500);

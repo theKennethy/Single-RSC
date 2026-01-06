@@ -102,6 +102,13 @@ public abstract class Bot {
                     return;
                 }
                 
+                Player player = getPlayer();
+                if (player == null || !player.isLoggedIn()) {
+                    log("Player disconnected or not logged in, stopping bot");
+                    stop();
+                    return;
+                }
+                
                 if (paused) {
                     return;
                 }

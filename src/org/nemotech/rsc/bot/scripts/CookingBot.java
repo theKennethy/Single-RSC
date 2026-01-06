@@ -74,13 +74,22 @@ public class CookingBot extends Bot {
         gameMessage("Cooking bot stopped. Total food cooked: " + foodCooked);
     }
     
+
+    private long lastStatusTime = 0;
+    private int consecutiveBankFailures = 0;
+
     @Override
     public int loop() {
         // Don't do anything if busy
         if (api.isBusy() || api.isMoving()) {
             return random(300, 500);
         }
-        
+
+        // Handle cooking state reset
+        if (state == State.COOKING) {
+            state = State.IDLE;
+        }
+
         // Check if we have raw food
         int rawFoodIndex = -1;
         for (int id : rawFoodIds) {
@@ -90,41 +99,41 @@ public class CookingBot extends Bot {
                 break;
             }
         }
-        
+
         // No raw food - bank cooked food and withdraw more raw food
         if (rawFoodIndex < 0) {
             state = State.BANKING;
             return handleBanking();
         }
-        
+
         // Close bank if open
         if (api.isBankOpen()) {
             api.closeBank();
             return random(300, 500);
         }
-        
+
         // Find a range or fire
         GameObject cookingSpot = api.getNearestObject(RANGE);
         if (cookingSpot == null) {
             cookingSpot = api.getNearestObject(FIRE);
         }
-        
-        if (cookingSpot == null) {
+
+        if (cookingSpot == null || cookingSpot.isRemoved()) {
             log("No range or fire found nearby!");
             return random(2000, 3000);
         }
-        
+
         // Walk to cooking spot if too far
         if (api.distanceTo(cookingSpot) > 1) {
             api.walkTo(cookingSpot.getX(), cookingSpot.getY());
             return random(600, 1000);
         }
-        
+
         // Use raw food on cooking spot
         state = State.COOKING;
         api.useItemOnObject(rawFoodIndex, cookingSpot);
         foodCooked++;
-        
+
         return random(2000, 3000);
     }
     
@@ -132,16 +141,23 @@ public class CookingBot extends Bot {
         // Open bank if not already open
         if (!api.isBankOpen()) {
             api.openBank();
-            return random(600, 800);
+            consecutiveBankFailures++;
+            if (consecutiveBankFailures > 3) {
+                gameMessage("@red@Bank command failed, continuing to cook...");
+                consecutiveBankFailures = 0;
+                state = State.IDLE;
+                return random(500, 1000);
+            }
+            return random(800, 1200);
         }
-        
+
         // Deposit all cooked food (just deposit all for simplicity)
         api.depositAll();
-        
+
         // Try to withdraw raw food from bank
         // For simplicity, we'll just stop and let user handle restocking
         gameMessage("Out of raw food! Please restock your inventory.");
-        
+
         return random(5000, 6000);
     }
     

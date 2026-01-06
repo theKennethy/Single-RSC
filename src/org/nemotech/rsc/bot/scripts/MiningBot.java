@@ -98,25 +98,38 @@ public class MiningBot extends Bot {
         gameMessage("Mining bot stopped. Total ores banked: " + oresMined);
     }
     
+
+    private long lastStatusTime = 0;
+    private int rocksMined = 0;
+    private int emptyRockSearchCount = 0;
+    private int consecutiveBankFailures = 0;
+
     @Override
     public int loop() {
         // Don't do anything if busy
         if (api.isBusy() || api.isMoving()) {
             return random(300, 500);
         }
-        
+
+        // Handle mining state reset - if we were mining, find a new rock immediately
+        if (state == State.MINING) {
+            state = State.IDLE;
+            targetRock = null;
+        }
+
         // Handle banking ores when inventory is full
         if (api.isInventoryFull()) {
             state = State.BANKING;
+            targetRock = null;
             return bankOres();
         }
-        
+
         // Close bank if it's open and we're not full
         if (api.isBankOpen()) {
             api.closeBank();
             return random(300, 500);
         }
-        
+
         // Find and mine a rock
         return mineRock();
     }
@@ -125,10 +138,19 @@ public class MiningBot extends Bot {
         // Find nearest rock
         targetRock = api.getNearestObject(rockIds);
         
-        if (targetRock == null) {
-            log("No rocks found nearby!");
-            return random(2000, 3000);
+        if (targetRock == null || targetRock.isRemoved()) {
+            state = State.IDLE;
+            targetRock = null;
+            emptyRockSearchCount++;
+            
+            if (emptyRockSearchCount > 5) {
+                gameMessage("No rocks found nearby, searching...");
+                emptyRockSearchCount = 0;
+            }
+            return random(500, 1500);
         }
+        
+        emptyRockSearchCount = 0;
         
         // Check if we're close enough to interact
         if (api.distanceTo(targetRock) > 1) {
@@ -140,6 +162,7 @@ public class MiningBot extends Bot {
         // Mine the rock
         state = State.MINING;
         api.interactObject(targetRock);
+        rocksMined++;
         
         return random(2000, 4000);
     }
@@ -148,7 +171,14 @@ public class MiningBot extends Bot {
         // Open bank if not already open
         if (!api.isBankOpen()) {
             api.openBank();
-            return random(600, 800);
+            consecutiveBankFailures++;
+            if (consecutiveBankFailures > 3) {
+                gameMessage("@red@Bank command failed, continuing to mine...");
+                consecutiveBankFailures = 0;
+                state = State.IDLE;
+                return random(500, 1000);
+            }
+            return random(800, 1200);
         }
         
         // Deposit all ores
@@ -157,11 +187,11 @@ public class MiningBot extends Bot {
             if (count > 0) {
                 api.depositItem(oreId, count);
                 oresMined += count;
-                return random(300, 500);
             }
         }
         
         // Done banking, close bank and continue
+        consecutiveBankFailures = 0;
         api.closeBank();
         state = State.IDLE;
         return random(300, 500);

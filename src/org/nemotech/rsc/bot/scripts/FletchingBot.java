@@ -71,20 +71,29 @@ public class FletchingBot extends Bot {
         gameMessage("Fletching bot stopped. Items fletched: " + itemsFletched);
     }
     
+
+    private long lastStatusTime = 0;
+    private int consecutiveBankFailures = 0;
+
     @Override
     public int loop() {
         // Don't do anything if busy
         if (api.isBusy() || api.isMoving()) {
             return random(300, 500);
         }
-        
+
+        // Handle fletching state reset
+        if (state == State.FLETCHING) {
+            state = State.IDLE;
+        }
+
         // Check for knife
         int knifeIndex = api.getInventoryIndex(KNIFE);
         if (knifeIndex < 0) {
             gameMessage("No knife! Please add one to your inventory.");
             return 5000;
         }
-        
+
         // Find logs to fletch
         int logIndex = -1;
         for (int id : logIds) {
@@ -94,52 +103,61 @@ public class FletchingBot extends Bot {
                 break;
             }
         }
-        
+
         // No logs - go bank
         if (logIndex < 0) {
             state = State.BANKING;
             return handleBanking();
         }
-        
+
         // Close bank if open
         if (api.isBankOpen()) {
             api.closeBank();
             return random(300, 500);
         }
-        
+
         // Use knife on logs
         state = State.FLETCHING;
         api.useItemOnItem(knifeIndex, logIndex);
         itemsFletched++;
-        
+
         return random(2000, 3000);
     }
     
     private int handleBanking() {
         if (!api.isBankOpen()) {
             api.openBank();
-            return random(600, 800);
+            consecutiveBankFailures++;
+            if (consecutiveBankFailures > 3) {
+                gameMessage("@red@Bank command failed, continuing to fletch...");
+                consecutiveBankFailures = 0;
+                state = State.IDLE;
+                return random(500, 1000);
+            }
+            return random(800, 1200);
         }
-        
+
         // Deposit all items (except knife)
         api.depositAll();
-        
+
         // Keep knife
         if (api.getBankCount(KNIFE) > 0 && api.getInventoryIndex(KNIFE) < 0) {
             api.withdrawItem(KNIFE, 1);
         }
-        
+
         // Try to withdraw logs
         for (int logId : logIds) {
             int bankCount = api.getBankCount(logId);
             if (bankCount > 0) {
                 api.withdrawItem(logId, Math.min(bankCount, 27));
+                consecutiveBankFailures = 0;
                 api.closeBank();
                 state = State.IDLE;
                 return random(600, 800);
             }
         }
-        
+
+        consecutiveBankFailures = 0;
         gameMessage("Out of logs! Please add more to your bank.");
         api.closeBank();
         return random(5000, 6000);

@@ -132,13 +132,23 @@ public class AgilityBot extends Bot {
         gameMessage("Agility bot stopped. Laps completed: " + lapsCompleted);
     }
     
+
+    private long lastStatusTime = 0;
+    private int obstaclesCleared = 0;
+    private int emptyObstacleSearchCount = 0;
+
     @Override
     public int loop() {
         // Don't do anything if busy or moving
         if (api.isBusy() || api.isMoving()) {
             return random(300, 500);
         }
-        
+
+        // Handle interacting state reset
+        if (state == State.INTERACTING) {
+            state = State.IDLE;
+        }
+
         // Find and interact with the next obstacle
         return navigateObstacle();
     }
@@ -174,9 +184,15 @@ public class AgilityBot extends Bot {
             }
         }
         
-        if (nearestObstacle == null) {
-            log("No obstacles found nearby! Make sure you're at the course.");
-            return random(3000, 5000);
+        if (nearestObstacle == null || nearestObstacle.isRemoved()) {
+            state = State.IDLE;
+            emptyObstacleSearchCount++;
+            
+            if (emptyObstacleSearchCount > 5) {
+                gameMessage("No obstacles found nearby! Make sure you're at the course.");
+                emptyObstacleSearchCount = 0;
+            }
+            return random(500, 1500);
         }
         
         // Check if we completed a lap (went back to first obstacle)
@@ -196,6 +212,7 @@ public class AgilityBot extends Bot {
         // Interact with the obstacle
         state = State.INTERACTING;
         api.interactObject(nearestObstacle);
+        obstaclesCleared++;
         
         // Wait longer for agility animations
         return random(3000, 5000);

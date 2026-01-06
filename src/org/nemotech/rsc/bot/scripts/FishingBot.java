@@ -105,25 +105,38 @@ public class FishingBot extends Bot {
         gameMessage("Fishing bot stopped. Total fish banked: " + fishCaught);
     }
     
+
+    private long lastStatusTime = 0;
+    private int spotsSearched = 0;
+    private int emptySpotSearchCount = 0;
+    private int consecutiveBankFailures = 0;
+
     @Override
     public int loop() {
         // Don't do anything if busy
         if (api.isBusy() || api.isMoving()) {
             return random(300, 500);
         }
-        
+
+        // Handle fishing state reset - if we were fishing, find a new spot immediately
+        if (state == State.FISHING) {
+            state = State.IDLE;
+            targetSpot = null;
+        }
+
         // Handle banking fish when inventory is full
         if (api.isInventoryFull()) {
             state = State.BANKING;
+            targetSpot = null;
             return bankFish();
         }
-        
+
         // Close bank if it's open and we're not full
         if (api.isBankOpen()) {
             api.closeBank();
             return random(300, 500);
         }
-        
+
         // Find and use fishing spot
         return fish();
     }
@@ -132,10 +145,19 @@ public class FishingBot extends Bot {
         // Find nearest fishing spot
         targetSpot = api.getNearestObject(fishingSpotIds);
         
-        if (targetSpot == null) {
-            log("No fishing spots found nearby!");
-            return random(2000, 3000);
+        if (targetSpot == null || targetSpot.isRemoved()) {
+            state = State.IDLE;
+            targetSpot = null;
+            emptySpotSearchCount++;
+            
+            if (emptySpotSearchCount > 5) {
+                gameMessage("No fishing spots found nearby, searching...");
+                emptySpotSearchCount = 0;
+            }
+            return random(500, 1500);
         }
+        
+        emptySpotSearchCount = 0;
         
         // Check if we're close enough to interact
         if (api.distanceTo(targetSpot) > 1) {
@@ -147,6 +169,7 @@ public class FishingBot extends Bot {
         // Start fishing
         state = State.FISHING;
         api.interactObject(targetSpot);
+        spotsSearched++;
         
         return random(2000, 4000);
     }
@@ -155,7 +178,14 @@ public class FishingBot extends Bot {
         // Open bank if not already open
         if (!api.isBankOpen()) {
             api.openBank();
-            return random(600, 800);
+            consecutiveBankFailures++;
+            if (consecutiveBankFailures > 3) {
+                gameMessage("@red@Bank command failed, continuing to fish...");
+                consecutiveBankFailures = 0;
+                state = State.IDLE;
+                return random(500, 1000);
+            }
+            return random(800, 1200);
         }
         
         // Deposit all fish
@@ -164,11 +194,11 @@ public class FishingBot extends Bot {
             if (count > 0) {
                 api.depositItem(fishId, count);
                 fishCaught += count;
-                return random(300, 500);
             }
         }
         
         // Done banking, close bank and continue
+        consecutiveBankFailures = 0;
         api.closeBank();
         state = State.IDLE;
         return random(300, 500);

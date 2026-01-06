@@ -76,19 +76,28 @@ public class SmithingBot extends Bot {
         gameMessage("Smithing bot stopped. Items smithed: " + itemsSmithed);
     }
     
+
+    private long lastStatusTime = 0;
+    private int consecutiveBankFailures = 0;
+
     @Override
     public int loop() {
         // Don't do anything if busy
         if (api.isBusy() || api.isMoving()) {
             return random(300, 500);
         }
-        
+
+        // Handle smithing state reset
+        if (state == State.SMITHING) {
+            state = State.IDLE;
+        }
+
         // Check for hammer
         if (api.getInventoryIndex(HAMMER) < 0) {
             gameMessage("No hammer! Please add one to your inventory.");
             return 5000;
         }
-        
+
         // Find bars to smith
         int barIndex = -1;
         for (int id : barIds) {
@@ -98,65 +107,74 @@ public class SmithingBot extends Bot {
                 break;
             }
         }
-        
+
         // No bars - go bank
         if (barIndex < 0) {
             state = State.BANKING;
             return handleBanking();
         }
-        
+
         // Close bank if open
         if (api.isBankOpen()) {
             api.closeBank();
             return random(300, 500);
         }
-        
+
         // Find anvil
         GameObject anvil = api.getNearestObject(ANVIL);
-        if (anvil == null) {
+        if (anvil == null || anvil.isRemoved()) {
             log("No anvil found nearby!");
             return random(2000, 3000);
         }
-        
+
         // Walk to anvil if too far
         if (api.distanceTo(anvil) > 1) {
             api.walkTo(anvil.getX(), anvil.getY());
             return random(600, 1000);
         }
-        
+
         // Use bar on anvil
         state = State.SMITHING;
         api.useItemOnObject(barIndex, anvil);
         itemsSmithed++;
-        
+
         return random(2000, 3000);
     }
     
     private int handleBanking() {
         if (!api.isBankOpen()) {
             api.openBank();
-            return random(600, 800);
+            consecutiveBankFailures++;
+            if (consecutiveBankFailures > 3) {
+                gameMessage("@red@Bank command failed, continuing to smith...");
+                consecutiveBankFailures = 0;
+                state = State.IDLE;
+                return random(500, 1000);
+            }
+            return random(800, 1200);
         }
-        
+
         // Deposit smithed items (deposit all non-bars/hammer)
         api.depositAll();
-        
+
         // Keep hammer
         if (api.getBankCount(HAMMER) > 0) {
             api.withdrawItem(HAMMER, 1);
         }
-        
+
         // Try to withdraw bars
         for (int barId : barIds) {
             int bankCount = api.getBankCount(barId);
             if (bankCount > 0) {
                 api.withdrawItem(barId, Math.min(bankCount, 27));
+                consecutiveBankFailures = 0;
                 api.closeBank();
                 state = State.IDLE;
                 return random(600, 800);
             }
         }
-        
+
+        consecutiveBankFailures = 0;
         gameMessage("Out of bars! Please add more to your bank.");
         api.closeBank();
         return random(5000, 6000);

@@ -69,20 +69,36 @@ public class FiremakingBot extends Bot {
         gameMessage("Firemaking bot stopped. Total logs burned: " + logsBurned);
     }
     
+
+    private long lastStatusTime = 0;
+    private int consecutiveBankFailures = 0;
+    private int consecutiveTinderboxFailures = 0;
+
     @Override
     public int loop() {
         // Don't do anything if busy
         if (api.isBusy() || api.isMoving()) {
             return random(300, 500);
         }
-        
+
+        // Handle lighting state reset
+        if (state == State.LIGHTING) {
+            state = State.IDLE;
+        }
+
         // Check for tinderbox
         int tinderboxIndex = api.getInventoryIndex(TINDERBOX);
         if (tinderboxIndex < 0) {
-            gameMessage("No tinderbox! Please add one to your inventory.");
-            return 5000;
+            consecutiveTinderboxFailures++;
+            if (consecutiveTinderboxFailures > 3) {
+                gameMessage("@red@No tinderbox! Please add one to your inventory.");
+                consecutiveTinderboxFailures = 0;
+            }
+            return random(2000, 3000);
         }
-        
+
+        consecutiveTinderboxFailures = 0;
+
         // Find logs to burn
         int logIndex = -1;
         for (int id : logIds) {
@@ -92,24 +108,24 @@ public class FiremakingBot extends Bot {
                 break;
             }
         }
-        
+
         // No logs - go bank
         if (logIndex < 0) {
             state = State.BANKING;
             return handleBanking();
         }
-        
+
         // Close bank if open
         if (api.isBankOpen()) {
             api.closeBank();
             return random(300, 500);
         }
-        
+
         // Use tinderbox on logs
         state = State.LIGHTING;
         api.useItemOnItem(tinderboxIndex, logIndex);
         logsBurned++;
-        
+
         return random(2000, 4000);
     }
     
@@ -117,13 +133,22 @@ public class FiremakingBot extends Bot {
         // Open bank if not already open
         if (!api.isBankOpen()) {
             api.openBank();
-            return random(600, 800);
+            consecutiveBankFailures++;
+            if (consecutiveBankFailures > 3) {
+                gameMessage("@red@Bank command failed, continuing to burn logs...");
+                consecutiveBankFailures = 0;
+                state = State.IDLE;
+                return random(500, 1000);
+            }
+            return random(800, 1200);
         }
-        
+
+        consecutiveBankFailures = 0;
+
         // Try to withdraw logs
         // For simplicity, we'll just stop and let user restock
         gameMessage("Out of logs! Please restock your inventory.");
-        
+
         return random(5000, 6000);
     }
     

@@ -90,19 +90,28 @@ public class HerblawBot extends Bot {
         gameMessage("Herblaw bot stopped. Items processed: " + itemsProcessed);
     }
     
+
+    private long lastStatusTime = 0;
+    private int consecutiveBankFailures = 0;
+
     @Override
     public int loop() {
         // Don't do anything if busy
         if (api.isBusy() || api.isMoving()) {
             return random(300, 500);
         }
-        
+
+        // Handle processing state reset
+        if (state == State.PROCESSING) {
+            state = State.IDLE;
+        }
+
         // Close bank if open
         if (api.isBankOpen()) {
             api.closeBank();
             return random(300, 500);
         }
-        
+
         if (mode == Mode.IDENTIFY) {
             return identifyHerbs();
         } else {
@@ -168,23 +177,32 @@ public class HerblawBot extends Bot {
     private int handleBankingIdentify() {
         if (!api.isBankOpen()) {
             api.openBank();
-            return random(600, 800);
+            consecutiveBankFailures++;
+            if (consecutiveBankFailures > 3) {
+                gameMessage("@red@Bank command failed, continuing to identify...");
+                consecutiveBankFailures = 0;
+                state = State.IDLE;
+                return random(500, 1000);
+            }
+            return random(800, 1200);
         }
-        
+
         // Deposit identified herbs
         api.depositAll();
-        
+
         // Withdraw unid herbs
         for (int herbId : unidHerbIds) {
             int bankCount = api.getBankCount(herbId);
             if (bankCount > 0) {
                 api.withdrawItem(herbId, Math.min(bankCount, 28));
+                consecutiveBankFailures = 0;
                 api.closeBank();
                 state = State.IDLE;
                 return random(600, 800);
             }
         }
-        
+
+        consecutiveBankFailures = 0;
         gameMessage("Out of unidentified herbs! Please add more to your bank.");
         api.closeBank();
         return random(5000, 6000);
@@ -193,29 +211,38 @@ public class HerblawBot extends Bot {
     private int handleBankingPotions() {
         if (!api.isBankOpen()) {
             api.openBank();
-            return random(600, 800);
+            consecutiveBankFailures++;
+            if (consecutiveBankFailures > 3) {
+                gameMessage("@red@Bank command failed, continuing to make potions...");
+                consecutiveBankFailures = 0;
+                state = State.IDLE;
+                return random(500, 1000);
+            }
+            return random(800, 1200);
         }
-        
+
         // Deposit potions
         api.depositAll();
-        
+
         // Withdraw vials
         int vialCount = api.getBankCount(VIAL_OF_WATER);
         if (vialCount > 0) {
             api.withdrawItem(VIAL_OF_WATER, Math.min(vialCount, 14));
         }
-        
+
         // Withdraw herbs
         for (int herbId : herbIds) {
             int bankCount = api.getBankCount(herbId);
             if (bankCount > 0) {
                 api.withdrawItem(herbId, Math.min(bankCount, 14));
+                consecutiveBankFailures = 0;
                 api.closeBank();
                 state = State.IDLE;
                 return random(600, 800);
             }
         }
-        
+
+        consecutiveBankFailures = 0;
         gameMessage("Out of materials! Please add herbs and vials to your bank.");
         api.closeBank();
         return random(5000, 6000);

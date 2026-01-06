@@ -84,6 +84,11 @@ public class MagicBot extends Bot {
         gameMessage("Magic bot stopped. Total spells cast: " + spellsCast);
     }
     
+
+    private long lastStatusTime = 0;
+    private int emptyNpcSearchCount = 0;
+    private int consecutiveBankFailures = 0;
+
     @Override
     public int loop() {
         // Check HP and eat if needed
@@ -92,23 +97,28 @@ public class MagicBot extends Bot {
             state = State.EATING;
             return eat();
         }
-        
+
         // Already in combat - wait
         if (api.inCombat()) {
             return random(500, 1000);
         }
-        
+
+        // Handle casting state reset
+        if (state == State.CASTING) {
+            state = State.IDLE;
+        }
+
         // Don't do anything if busy
         if (api.isBusy() || api.isMoving()) {
             return random(300, 500);
         }
-        
+
         // Close bank if open
         if (api.isBankOpen()) {
             api.closeBank();
             return random(300, 500);
         }
-        
+
         // Find and attack an NPC with magic
         return castOnNpc();
     }
@@ -129,44 +139,61 @@ public class MagicBot extends Bot {
     
     private int castOnNpc() {
         NPC target = api.getNearestAttackableNpc(targetNpcIds);
-        
-        if (target == null) {
-            log("No targets found nearby!");
-            return random(2000, 3000);
+
+        if (target == null || target.isRemoved()) {
+            state = State.IDLE;
+            emptyNpcSearchCount++;
+
+            if (emptyNpcSearchCount > 5) {
+                gameMessage("No targets found nearby, searching...");
+                emptyNpcSearchCount = 0;
+            }
+            return random(500, 1500);
         }
-        
+
+        emptyNpcSearchCount = 0;
+
         // Walk closer if too far
         if (api.distanceTo(target) > 5) {
             state = State.WALKING_TO_NPC;
             api.walkTo(target.getX(), target.getY());
             return random(600, 1000);
         }
-        
+
         // Attack the NPC (will use magic if selected in combat style)
         state = State.CASTING;
         api.attackNpc(target);
         spellsCast++;
-        
+
         return random(2000, 3000);
     }
     
     private int handleBanking() {
         if (!api.isBankOpen()) {
             api.openBank();
-            return random(600, 800);
+            consecutiveBankFailures++;
+            if (consecutiveBankFailures > 3) {
+                gameMessage("@red@Bank command failed, continuing to cast...");
+                consecutiveBankFailures = 0;
+                state = State.IDLE;
+                return random(500, 1000);
+            }
+            return random(800, 1200);
         }
-        
+
         // Try to withdraw food
         for (int foodId : foodIds) {
             int bankCount = api.getBankCount(foodId);
             if (bankCount > 0) {
                 api.withdrawItem(foodId, Math.min(bankCount, 10));
+                consecutiveBankFailures = 0;
                 api.closeBank();
                 state = State.IDLE;
                 return random(600, 800);
             }
         }
-        
+
+        consecutiveBankFailures = 0;
         gameMessage("Out of food! Please add more to your bank.");
         api.closeBank();
         return random(5000, 6000);
