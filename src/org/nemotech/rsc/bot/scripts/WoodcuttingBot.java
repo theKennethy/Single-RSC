@@ -136,7 +136,12 @@ public class WoodcuttingBot extends Bot {
     }
     
     private int chopTree() {
-        GameObject tree = api.getNearestObject(treeIds);
+        GameObject tree;
+        if (areaMinX != null && areaMaxX != null && areaMinY != null && areaMaxY != null) {
+            tree = api.getNearestObjectInArea(treeIds, areaMinX, areaMaxX, areaMinY, areaMaxY);
+        } else {
+            tree = api.getNearestObject(treeIds);
+        }
         
         if (tree == null || tree.isRemoved()) {
             state = State.IDLE;
@@ -145,7 +150,6 @@ public class WoodcuttingBot extends Bot {
             
             if (emptyTreeSearchCount > 10) {
                 emptyTreeSearchCount = 0;
-                gameMessage("Searching nearby area...");
                 int currentX = api.getX();
                 int currentY = api.getY();
                 int[] offsets = { -8, -6, -4, 4, 6, 8 };
@@ -169,6 +173,12 @@ public class WoodcuttingBot extends Bot {
         emptyTreeSearchCount = 0;
         lastTreeX = tree.getX();
         lastTreeY = tree.getY();
+        
+        if (!isInArea(tree.getX(), tree.getY())) {
+            state = State.IDLE;
+            targetTree = null;
+            return random(200, 400);
+        }
         
         int dist = api.distanceTo(tree);
         
