@@ -90,14 +90,15 @@ public class WoodcuttingBot extends Bot {
         boolean busy = api.isBusy();
         boolean moving = api.isMoving();
         int invCount = api.getInventorySize();
-        boolean invFull = api.isInventoryFull();
+        int maxInv = 30;
+        boolean invFull = invCount >= maxInv;
         boolean bankOpen = api.isBankOpen();
 
         long now = System.currentTimeMillis();
         if (now - lastDebugTime > 3000) {
             lastDebugTime = now;
             System.out.println("BOT: state=" + state + " busy=" + busy + " moving=" + moving + 
-                " inv=" + invCount + " bank=" + bankOpen);
+                " inv=" + invCount + "/" + maxInv + " bank=" + bankOpen);
         }
 
         if (busy || moving) {
@@ -114,7 +115,7 @@ public class WoodcuttingBot extends Bot {
         stuckTime = 0;
 
         if (invFull) {
-            System.out.println("BOT: Inventory full, going to bank");
+            System.out.println("BOT: Inventory full (" + invCount + "/" + maxInv + "), going to bank");
             state = State.BANKING;
             targetTree = null;
             return bankLogs();
@@ -126,7 +127,6 @@ public class WoodcuttingBot extends Bot {
             return 10;
         }
         
-        // If we're chopping, reset to find a new tree
         if (state == State.CHOPPING) {
             state = State.IDLE;
             targetTree = null;
