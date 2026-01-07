@@ -20,6 +20,8 @@ public class WoodcuttingBot extends Bot {
     private int consecutiveBankFailures = 0;
     private int lastTreeX = 0;
     private int lastTreeY = 0;
+    private int treeInteractionCount = 0;
+    private GameObject lastInteractedTree = null;
     
     public Integer areaMinX = null;
     public Integer areaMaxX = null;
@@ -187,6 +189,7 @@ public class WoodcuttingBot extends Bot {
         targetTree = tree;
         api.interactObject(tree);
         treesChopped++;
+        treeInteractionCount = 0;
         
         return 10;
     }
@@ -194,14 +197,7 @@ public class WoodcuttingBot extends Bot {
     private int bankLogs() {
         if (!api.isBankOpen()) {
             api.openBank();
-            consecutiveBankFailures++;
-            if (consecutiveBankFailures > 5) {
-                gameMessage("@red@Bank command failed, continuing to chop...");
-                consecutiveBankFailures = 0;
-                state = State.IDLE;
-                return random(1000, 2000);
-            }
-            return random(1500, 2500);
+            return random(1000, 1500);
         }
         
         for (int logId : logIds) {
@@ -212,7 +208,6 @@ public class WoodcuttingBot extends Bot {
             }
         }
         
-        consecutiveBankFailures = 0;
         api.closeBank();
         state = State.IDLE;
         return 10;
