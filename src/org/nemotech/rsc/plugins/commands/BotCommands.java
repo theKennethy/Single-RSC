@@ -392,15 +392,15 @@ public class BotCommands extends Plugin implements CommandListener {
                 logIds = new int[] { 633 };
                 break;
             case "maple":
-                treeIds = new int[] { 309 };
+                treeIds = new int[] { 308 };
                 logIds = new int[] { 634 };
                 break;
             case "yew":
-                treeIds = new int[] { 310 };
+                treeIds = new int[] { 309 };
                 logIds = new int[] { 635 };
                 break;
             case "magic":
-                treeIds = new int[] { 311 };
+                treeIds = new int[] { 310 };
                 logIds = new int[] { 636 };
                 break;
             case "normal":
