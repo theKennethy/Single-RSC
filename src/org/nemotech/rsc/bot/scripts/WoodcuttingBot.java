@@ -98,8 +98,8 @@ public class WoodcuttingBot extends Bot {
             return 10;
         }
         
+        // If we're chopping, reset to find a new tree
         if (state == State.CHOPPING) {
-            System.out.println("BOT: Was chopping, finding new tree");
             state = State.IDLE;
             targetTree = null;
         }
