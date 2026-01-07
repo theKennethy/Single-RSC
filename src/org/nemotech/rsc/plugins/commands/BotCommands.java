@@ -41,7 +41,7 @@ public class BotCommands extends Plugin implements CommandListener {
     
     public String[] getCommands() {
         return new String[] { 
-            "bot", "woodcut", "wc", "fish", "combat", "fight", 
+            "bot", "botarea", "woodcut", "wc", "fish", "combat", "fight", 
             "mine", "mining", "agility", "agil", "cook", "cooking",
             "firemaking", "fm", "thieve", "thieving", "pickpocket",
             "prayer", "pray", "ranged", "range", "magic", "mage",
@@ -57,6 +57,12 @@ public class BotCommands extends Plugin implements CommandListener {
         // Main bot command
         if (command.equals("bot")) {
             handleBotCommand(args, player);
+            return;
+        }
+        
+        // Bot area command
+        if (command.equals("botarea")) {
+            handleBotAreaCommand(args, player);
             return;
         }
         
@@ -235,6 +241,91 @@ public class BotCommands extends Plugin implements CommandListener {
         player.getSender().sendMessage("@whi@::cook, ::fm, ::smith, ::fletch");
         player.getSender().sendMessage("@whi@::craft, ::herblaw");
         player.getSender().sendMessage("@whi@::stopbot - Stop all bots");
+    }
+    
+    private void handleBotAreaCommand(String[] args, Player player) {
+        BotManager manager = BotManager.getInstance();
+        Bot active = manager.getActiveBot();
+        
+        if (active == null) {
+            player.getSender().sendMessage("@cya@[Bot] @red@No active bot running.");
+            return;
+        }
+        
+        if (active instanceof WoodcuttingBot) {
+            WoodcuttingBot woodbot = (WoodcuttingBot) active;
+            
+            if (args.length == 0) {
+                player.getSender().sendMessage("@cya@[Bot] @whi@Usage: ::botarea <location>");
+                player.getSender().sendMessage("@whi@Locations: seers, varrock, falador, draynor, portsarim, karamja, alkharid, lumbridge, edgeville, taverly, barbarian, rimmington, catherby, ardougne, yanille, lostcity, gnome, tutorial");
+                player.getSender().sendMessage("@whi@Or coords: ::botarea <minX> <maxX> <minY> <maxY>");
+                player.getSender().sendMessage("@whi@Use ::botarea clear to remove bounds");
+                if (woodbot.areaMinX != null) {
+                    player.getSender().sendMessage("@whi@Current area: " + woodbot.areaMinX + "-" + woodbot.areaMaxX + ", " + woodbot.areaMinY + "-" + woodbot.areaMaxY);
+                } else {
+                    player.getSender().sendMessage("@whi@Current area: Unbounded");
+                }
+                return;
+            }
+            
+            if (args[0].equalsIgnoreCase("clear")) {
+                woodbot.clearAreaBounds();
+                player.getSender().sendMessage("@cya@[Bot] @red@Area bounds cleared.");
+                return;
+            }
+            
+            if (args.length == 1) {
+                String loc = args[0].toLowerCase();
+                setAreaByLocation(woodbot, loc, player);
+                return;
+            }
+            
+            if (args.length < 4) {
+                player.getSender().sendMessage("@cya@[Bot] @red@Usage: ::botarea <location> or ::botarea <minX> <maxX> <minY> <maxY>");
+                return;
+            }
+            
+            try {
+                int minX = Integer.parseInt(args[0]);
+                int maxX = Integer.parseInt(args[1]);
+                int minY = Integer.parseInt(args[2]);
+                int maxY = Integer.parseInt(args[3]);
+                
+                woodbot.setAreaBounds(minX, maxX, minY, maxY);
+                player.getSender().sendMessage("@cya@[Bot] @gre@Area set: " + minX + "-" + maxX + ", " + minY + "-" + maxY);
+            } catch (NumberFormatException e) {
+                player.getSender().sendMessage("@cya@[Bot] @red@Invalid coordinates.");
+            }
+        } else {
+            player.getSender().sendMessage("@cya@[Bot] @red@This command only works with Woodcutting bot.");
+        }
+    }
+    
+    private void setAreaByLocation(WoodcuttingBot woodbot, String loc, Player player) {
+        switch (loc) {
+            case "varrock": woodbot.setAreaBounds(100, 160, 480, 550); break;
+            case "falador": woodbot.setAreaBounds(280, 340, 510, 580); break;
+            case "draynor": woodbot.setAreaBounds(190, 240, 600, 660); break;
+            case "portsarim": woodbot.setAreaBounds(250, 290, 620, 670); break;
+            case "karamja": woodbot.setAreaBounds(350, 400, 660, 710); break;
+            case "alkharid": woodbot.setAreaBounds(70, 120, 660, 720); break;
+            case "lumbridge": woodbot.setAreaBounds(100, 160, 620, 680); break;
+            case "edgeville": woodbot.setAreaBounds(190, 250, 420, 480); break;
+            case "taverly": woodbot.setAreaBounds(350, 400, 470, 530); break;
+            case "seers": case "seersvillage": woodbot.setAreaBounds(370, 470, 530, 680); break;
+            case "barbarian": woodbot.setAreaBounds(210, 260, 490, 540); break;
+            case "rimmington": woodbot.setAreaBounds(300, 350, 640, 690); break;
+            case "catherby": woodbot.setAreaBounds(420, 470, 480, 530); break;
+            case "ardougne": woodbot.setAreaBounds(520, 580, 560, 620); break;
+            case "yanille": woodbot.setAreaBounds(560, 620, 720, 780); break;
+            case "lostcity": woodbot.setAreaBounds(100, 160, 3490, 3550); break;
+            case "gnome": woodbot.setAreaBounds(680, 740, 500, 560); break;
+            case "tutorial": woodbot.setAreaBounds(190, 250, 720, 770); break;
+            default:
+                player.getSender().sendMessage("@cya@[Bot] @red@Unknown location: " + loc);
+                return;
+        }
+        player.getSender().sendMessage("@cya@[Bot] @gre@Area set to: " + loc.toUpperCase());
     }
     
     private void listBots(Player player) {

@@ -21,6 +21,11 @@ public class WoodcuttingBot extends Bot {
     private int lastTreeX = 0;
     private int lastTreeY = 0;
     
+    public Integer areaMinX = null;
+    public Integer areaMaxX = null;
+    public Integer areaMinY = null;
+    public Integer areaMaxY = null;
+    
     private long lastDebugTime = 0;
     private long stuckTime = 0;
 
@@ -40,6 +45,27 @@ public class WoodcuttingBot extends Bot {
     
     public void setLogIds(int... ids) {
         this.logIds = ids;
+    }
+    
+    public void setAreaBounds(int minX, int maxX, int minY, int maxY) {
+        this.areaMinX = minX;
+        this.areaMaxX = maxX;
+        this.areaMinY = minY;
+        this.areaMaxY = maxY;
+    }
+    
+    public void clearAreaBounds() {
+        this.areaMinX = null;
+        this.areaMaxX = null;
+        this.areaMinY = null;
+        this.areaMaxY = null;
+    }
+    
+    public boolean isInArea(int x, int y) {
+        if (areaMinX == null || areaMaxX == null || areaMinY == null || areaMaxY == null) {
+            return true;
+        }
+        return x >= areaMinX && x <= areaMaxX && y >= areaMinY && y <= areaMaxY;
     }
     
     @Override
@@ -127,7 +153,14 @@ public class WoodcuttingBot extends Bot {
                 int randomOffsetY = offsets[random(0, offsets.length - 1)];
                 int newX = currentX + randomOffsetX;
                 int newY = currentY + randomOffsetY;
-                api.walkTo(newX, newY);
+                
+                if (isInArea(newX, newY)) {
+                    api.walkTo(newX, newY);
+                } else {
+                    int centerX = (areaMinX + areaMaxX) / 2;
+                    int centerY = (areaMinY + areaMaxY) / 2;
+                    api.walkTo(centerX, centerY);
+                }
                 return random(1000, 2000);
             }
             return random(800, 1200);
