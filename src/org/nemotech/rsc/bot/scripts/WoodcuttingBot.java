@@ -172,6 +172,21 @@ public class WoodcuttingBot extends Bot {
         lastTreeX = tree.getX();
         lastTreeY = tree.getY();
         
+        if (tree.equals(lastInteractedTree)) {
+            treeInteractionCount++;
+            if (treeInteractionCount > 3) {
+                gameMessage("Tree not responding, finding another...");
+                lastInteractedTree = null;
+                treeInteractionCount = 0;
+                state = State.IDLE;
+                targetTree = null;
+                return random(200, 400);
+            }
+        } else {
+            lastInteractedTree = tree;
+            treeInteractionCount = 0;
+        }
+        
         int dist = api.distanceTo(tree);
         
         if (dist > 2) {
@@ -189,7 +204,6 @@ public class WoodcuttingBot extends Bot {
         targetTree = tree;
         api.interactObject(tree);
         treesChopped++;
-        treeInteractionCount = 0;
         
         return 10;
     }
