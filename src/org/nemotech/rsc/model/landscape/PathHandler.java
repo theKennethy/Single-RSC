@@ -29,6 +29,16 @@ public class PathHandler {
     private Mob mob;
 
     /**
+     * Timeout for stuck path - auto-resets after 60 seconds
+     */
+    private static final long PATH_TIMEOUT = 60000;
+
+    /**
+     * Timestamp when path was set - used for auto-expiration
+     */
+    private long pathSetTime = 0;
+
+    /**
      * The path we are walking
      */
     private Path path;
@@ -68,6 +78,10 @@ public class PathHandler {
             return true;
         }
         if (path.length() > 0) {
+            if (!atWaypoint(path.length() - 1) && System.currentTimeMillis() - pathSetTime > PATH_TIMEOUT) {
+                resetPath();
+                return true;
+            }
             return atWaypoint(path.length() - 1);
         } else {
             return atStart();
@@ -261,6 +275,7 @@ public class PathHandler {
     public void setPath(Path path) {
         curWaypoint = -1;
         this.path = path;
+        this.pathSetTime = System.currentTimeMillis();
     }
 
     /**
