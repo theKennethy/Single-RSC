@@ -171,8 +171,6 @@ public class WoodcuttingBot extends Bot {
         }
         
         emptyTreeSearchCount = 0;
-        lastTreeX = tree.getX();
-        lastTreeY = tree.getY();
         
         if (!isInArea(tree.getX(), tree.getY())) {
             state = State.IDLE;
@@ -186,7 +184,7 @@ public class WoodcuttingBot extends Bot {
             state = State.WALKING_TO_TREE;
             targetTree = tree;
             api.walkTo(tree.getX(), tree.getY());
-            return random(500, 800);
+            return random(600, 1000);
         }
         
         state = State.CHOPPING;
@@ -194,50 +192,30 @@ public class WoodcuttingBot extends Bot {
         api.interactObject(tree);
         treesChopped++;
         
-        return 10;
+        return 500;
     }
     
     private int bankLogs() {
         if (!api.isBankOpen()) {
             api.openBank();
-            int waitCount = 0;
-            while (!api.isBankOpen() && waitCount < 20) {
-                waitCount++;
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    break;
-                }
-            }
-            if (!api.isBankOpen()) {
-                gameMessage("@red@Bank failed to open, trying again...");
-                return random(500, 1000);
-            }
-            return random(800, 1000);
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {}
+            return 100;
         }
         
         int totalDeposited = 0;
-        int inventoryCount = api.getInventorySize();
-        int depositedCount = 0;
         
-        while (depositedCount < inventoryCount && depositedCount < 30) {
-            boolean depositedThisLoop = false;
-            for (int logId : logIds) {
-                int count = api.getInventoryCount(logId);
-                if (count > 0) {
-                    api.depositItem(logId, count);
-                    totalDeposited += count;
-                    depositedCount += count;
-                    depositedThisLoop = true;
+        for (int logId : logIds) {
+            int count = api.getInventoryCount(logId);
+            if (count > 0) {
+                for (int i = 0; i < count; i++) {
+                    api.depositItem(logId, 1);
+                    totalDeposited++;
                     try {
-                        Thread.sleep(50);
-                    } catch (InterruptedException e) {
-                        break;
-                    }
+                        Thread.sleep(20);
+                    } catch (InterruptedException e) {}
                 }
-            }
-            if (!depositedThisLoop) {
-                break;
             }
         }
         
