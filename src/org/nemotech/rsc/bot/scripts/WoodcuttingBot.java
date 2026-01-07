@@ -149,13 +149,13 @@ public class WoodcuttingBot extends Bot {
         if (!api.isBankOpen()) {
             api.openBank();
             consecutiveBankFailures++;
-            if (consecutiveBankFailures > 3) {
+            if (consecutiveBankFailures > 5) {
                 gameMessage("@red@Bank command failed, continuing to chop...");
                 consecutiveBankFailures = 0;
                 state = State.IDLE;
-                return random(500, 1000);
+                return random(1000, 2000);
             }
-            return random(800, 1200);
+            return random(1500, 2500);
         }
         
         for (int logId : logIds) {
