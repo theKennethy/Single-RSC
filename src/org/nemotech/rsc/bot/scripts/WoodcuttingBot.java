@@ -217,18 +217,31 @@ public class WoodcuttingBot extends Bot {
                 gameMessage("@red@Bank failed to open, trying again...");
                 return random(500, 1000);
             }
-            return random(500, 800);
+            return random(800, 1000);
         }
         
         int totalDeposited = 0;
-        for (int logId : logIds) {
-            int count = api.getInventoryCount(logId);
-            if (count > 0) {
-                for (int i = 0; i < count; i++) {
-                    api.depositItem(logId, 1);
-                    totalDeposited++;
+        int inventoryCount = api.getInventorySize();
+        int depositedCount = 0;
+        
+        while (depositedCount < inventoryCount && depositedCount < 30) {
+            boolean depositedThisLoop = false;
+            for (int logId : logIds) {
+                int count = api.getInventoryCount(logId);
+                if (count > 0) {
+                    api.depositItem(logId, count);
+                    totalDeposited += count;
+                    depositedCount += count;
+                    depositedThisLoop = true;
+                    try {
+                        Thread.sleep(50);
+                    } catch (InterruptedException e) {
+                        break;
+                    }
                 }
-                logsChopped += count;
+            }
+            if (!depositedThisLoop) {
+                break;
             }
         }
         

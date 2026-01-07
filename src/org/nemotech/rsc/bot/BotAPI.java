@@ -726,6 +726,7 @@ public class BotAPI {
     
     /**
      * Finds the nearest game object by ID within specified area bounds.
+     * Searches the ENTIRE area to find the closest tree.
      */
     public GameObject getNearestObjectInArea(int[] ids, int minX, int maxX, int minY, int maxY) {
         GameObject nearest = null;
@@ -751,24 +752,22 @@ public class BotAPI {
             }
         }
         
-        if (nearest == null) {
-            for (int x = minX; x <= maxX; x += 10) {
-                for (int y = minY; y <= maxY; y += 10) {
-                    ActiveTile tile = World.getWorld().getTile(x, y);
-                    if (tile == null || !tile.hasGameObject()) continue;
-                    
-                    GameObject obj = tile.getGameObject();
-                    if (obj == null || obj.isRemoved()) continue;
-                    
-                    for (int id : ids) {
-                        if (obj.getID() == id) {
-                            int dist = distanceTo(obj);
-                            if (dist < nearestDist) {
-                                nearestDist = dist;
-                                nearest = obj;
-                            }
-                            break;
+        for (int x = minX; x <= maxX; x += 5) {
+            for (int y = minY; y <= maxY; y += 5) {
+                ActiveTile tile = World.getWorld().getTile(x, y);
+                if (tile == null || !tile.hasGameObject()) continue;
+                
+                GameObject obj = tile.getGameObject();
+                if (obj == null || obj.isRemoved()) continue;
+                
+                for (int id : ids) {
+                    if (obj.getID() == id) {
+                        int dist = distanceTo(obj);
+                        if (dist < nearestDist) {
+                            nearestDist = dist;
+                            nearest = obj;
                         }
+                        break;
                     }
                 }
             }
