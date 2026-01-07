@@ -41,7 +41,7 @@ public class BotCommands extends Plugin implements CommandListener {
     
     public String[] getCommands() {
         return new String[] { 
-            "bot", "botwand", "woodcut", "wc", "fish", "combat", "fight", 
+            "bot", "botwand", "botarea", "woodcut", "wc", "fish", "combat", "fight", 
             "mine", "mining", "agility", "agil", "cook", "cooking",
             "firemaking", "fm", "thieve", "thieving", "pickpocket",
             "prayer", "pray", "ranged", "range", "magic", "mage",
@@ -63,6 +63,12 @@ public class BotCommands extends Plugin implements CommandListener {
         // Bot wander toggle command
         if (command.equals("botwand")) {
             handleBotWandCommand(args, player);
+            return;
+        }
+        
+        // Bot area bounds command
+        if (command.equals("botarea")) {
+            handleBotAreaCommand(args, player);
             return;
         }
         
@@ -232,6 +238,9 @@ public class BotCommands extends Plugin implements CommandListener {
         player.getSender().sendMessage("@whi@::bot start/stop <name> - Start/stop a bot");
         player.getSender().sendMessage("@whi@::bot pause - Pause/resume active bot");
         player.getSender().sendMessage("@whi@::bot status - Show bot status");
+        player.getSender().sendMessage("@cya@=== Bot Settings ===");
+        player.getSender().sendMessage("@whi@::botwand on/off - Enable/disable wandering");
+        player.getSender().sendMessage("@whi@::botarea <minX> <maxX> <minY> <maxY> - Set area bounds");
         player.getSender().sendMessage("@cya@=== Quick Start (Gathering) ===");
         player.getSender().sendMessage("@whi@::woodcut, ::fish, ::mine - Gathering skills");
         player.getSender().sendMessage("@cya@=== Quick Start (Combat) ===");
@@ -271,6 +280,58 @@ public class BotCommands extends Plugin implements CommandListener {
                 player.getSender().sendMessage("@cya@[Bot] @red@Wander disabled - bot will stay in current area.");
             } else {
                 player.getSender().sendMessage("@cya@[Bot] @whi@Usage: ::botwand on | off");
+            }
+        } else {
+            player.getSender().sendMessage("@cya@[Bot] @red@This command only works with Woodcutting bot.");
+        }
+    }
+    
+    private void handleBotAreaCommand(String[] args, Player player) {
+        BotManager manager = BotManager.getInstance();
+        Bot active = manager.getActiveBot();
+        
+        if (active == null) {
+            player.getSender().sendMessage("@cya@[Bot] @red@No active bot running.");
+            return;
+        }
+        
+        if (active instanceof WoodcuttingBot) {
+            WoodcuttingBot woodbot = (WoodcuttingBot) active;
+            
+            if (args.length == 0) {
+                player.getSender().sendMessage("@cya@[Bot] @whi@Usage: ::botarea <minX> <maxX> <minY> <maxY>");
+                player.getSender().sendMessage("@whi@Example: ::botarea 400 500 600 700");
+                player.getSender().sendMessage("@whi@Use ::botarea clear to remove bounds");
+                if (woodbot.areaMinX != null) {
+                    player.getSender().sendMessage("@whi@Current area: " + woodbot.areaMinX + "-" + woodbot.areaMaxX + ", " + woodbot.areaMinY + "-" + woodbot.areaMaxY);
+                } else {
+                    player.getSender().sendMessage("@whi@Current area: Unbounded (whole map)");
+                }
+                return;
+            }
+            
+            if (args[0].equalsIgnoreCase("clear")) {
+                woodbot.clearAreaBounds();
+                player.getSender().sendMessage("@cya@[Bot] @red@Area bounds cleared - bot can go anywhere.");
+                return;
+            }
+            
+            if (args.length < 4) {
+                player.getSender().sendMessage("@cya@[Bot] @red@Need 4 coordinates: minX maxX minY maxY");
+                return;
+            }
+            
+            try {
+                int minX = Integer.parseInt(args[0]);
+                int maxX = Integer.parseInt(args[1]);
+                int minY = Integer.parseInt(args[2]);
+                int maxY = Integer.parseInt(args[3]);
+                
+                woodbot.setAreaBounds(minX, maxX, minY, maxY);
+                player.getSender().sendMessage("@cya@[Bot] @gre@Area set to: " + minX + "-" + maxX + ", " + minY + "-" + maxY);
+                player.getSender().sendMessage("@cya@[Bot] @whi@Bot will stay within these coordinates.");
+            } catch (NumberFormatException e) {
+                player.getSender().sendMessage("@cya@[Bot] @red@Invalid coordinates. Use numbers.");
             }
         } else {
             player.getSender().sendMessage("@cya@[Bot] @red@This command only works with Woodcutting bot.");
@@ -331,15 +392,15 @@ public class BotCommands extends Plugin implements CommandListener {
                 logIds = new int[] { 633 };
                 break;
             case "maple":
-                treeIds = new int[] { 308 };
+                treeIds = new int[] { 309 };
                 logIds = new int[] { 634 };
                 break;
             case "yew":
-                treeIds = new int[] { 309 };
+                treeIds = new int[] { 310 };
                 logIds = new int[] { 635 };
                 break;
             case "magic":
-                treeIds = new int[] { 310 };
+                treeIds = new int[] { 311 };
                 logIds = new int[] { 636 };
                 break;
             case "normal":
