@@ -3,75 +3,39 @@ package org.nemotech.rsc.bot.scripts;
 import org.nemotech.rsc.bot.Bot;
 import org.nemotech.rsc.model.GameObject;
 
-/**
- * A woodcutting bot that chops trees and banks logs.
- * 
- * Usage:
- * 1. Start the bot near some trees
- * 2. It will automatically find and chop trees
- * 3. When inventory is full, it banks all logs (uses ::bank)
- * 
- * Tree Object IDs:
- * - Regular Tree: 0, 1, 70
- * - Oak Tree: 306
- * - Willow Tree: 307
- * - Maple Tree: 308
- * - Yew Tree: 309
- * - Magic Tree: 310
- * 
- * Log Item IDs:
- * - Logs: 14
- * - Oak Logs: 632
- * - Willow Logs: 633
- * - Maple Logs: 634
- * - Yew Logs: 635
- * - Magic Logs: 636
- */
 public class WoodcuttingBot extends Bot {
     
-    // Default tree IDs (regular trees - multiple IDs for different tree graphics)
     private int[] treeIds = { 0, 1, 70 };
-    
-    // Default log IDs to bank
     private int[] logIds = { 14 };
     
-    // Track what we're doing
     private enum State {
-        IDLE,
-        WALKING_TO_TREE,
-        CHOPPING,
-        BANKING
+        IDLE, WALKING_TO_TREE, CHOPPING, BANKING
     }
     
     private State state = State.IDLE;
     private GameObject targetTree = null;
     private int logsChopped = 0;
+    private int treesChopped = 0;
+    private int emptyTreeSearchCount = 0;
+    private int consecutiveBankFailures = 0;
     
+    private long lastDebugTime = 0;
+    private long stuckTime = 0;
+
     public WoodcuttingBot() {
         super("Woodcutting Bot");
     }
     
-    /**
-     * Creates a woodcutting bot with custom tree and log IDs.
-     * @param treeIds Array of tree object IDs to chop
-     * @param logIds Array of log item IDs to bank
-     */
     public WoodcuttingBot(int[] treeIds, int[] logIds) {
         super("Woodcutting Bot");
         this.treeIds = treeIds;
         this.logIds = logIds;
     }
     
-    /**
-     * Sets the tree types to chop.
-     */
     public void setTreeIds(int... ids) {
         this.treeIds = ids;
     }
     
-    /**
-     * Sets the log types to bank.
-     */
     public void setLogIds(int... ids) {
         this.logIds = ids;
     }
@@ -81,73 +45,69 @@ public class WoodcuttingBot extends Bot {
         super.onStart();
         logsChopped = 0;
         state = State.IDLE;
-        gameMessage("Woodcutting bot started! Chopping tree IDs: " + arrayToString(treeIds));
-        gameMessage("Logs will be banked when inventory is full.");
+        gameMessage("Woodcutting bot started!");
     }
     
     @Override
     public void onStop() {
         super.onStop();
-        // Close bank if open
         if (api.isBankOpen()) {
             api.closeBank();
         }
         gameMessage("Woodcutting bot stopped. Total logs banked: " + logsChopped);
     }
     
-    private long lastStatusTime = 0;
-    private int treesChopped = 0;
-    private int emptyTreeSearchCount = 0;
-    private int consecutiveBankFailures = 0;
-    
-    private long lastDebugTime = 0;
-
     @Override
     public int loop() {
-        // Debug logging every 5 seconds
+        boolean busy = api.isBusy();
+        boolean moving = api.isMoving();
+        int invCount = api.getInventorySize();
+        boolean invFull = api.isInventoryFull();
+        boolean bankOpen = api.isBankOpen();
+
         long now = System.currentTimeMillis();
-        if (now - lastDebugTime > 5000) {
+        if (now - lastDebugTime > 3000) {
             lastDebugTime = now;
-            System.out.println("BOT DEBUG: busy=" + api.isBusy() + " moving=" + api.isMoving() + 
-                " state=" + state + " invFull=" + api.isInventoryFull() + " bankOpen=" + api.isBankOpen());
+            System.out.println("BOT: state=" + state + " busy=" + busy + " moving=" + moving + 
+                " inv=" + invCount + " bank=" + bankOpen);
         }
 
-        // Don't do anything if busy (chopping, walking, etc)
-        if (api.isBusy()) {
+        if (busy || moving) {
+            if (stuckTime == 0) {
+                stuckTime = now;
+            } else if (now - stuckTime > 30000) {
+                System.out.println("BOT: Recovering from stuck state");
+                stuckTime = 0;
+                state = State.IDLE;
+                return 10;
+            }
             return 10;
         }
+        stuckTime = 0;
 
-        // If we're walking, wait until we stop
-        if (api.isMoving()) {
-            return 10;
-        }
-
-        // If we're chopping, check if we should continue or find a new tree
-        if (state == State.CHOPPING) {
-            state = State.IDLE;
-            targetTree = null;
-            return chopTree();
-        }
-
-        // Handle banking logs when inventory is full
-        if (api.isInventoryFull()) {
+        if (invFull) {
+            System.out.println("BOT: Inventory full, going to bank");
             state = State.BANKING;
             targetTree = null;
             return bankLogs();
         }
         
-        // Close bank if it's open and we're not full
-        if (api.isBankOpen()) {
-            api.closeBank();;
+        if (bankOpen) {
+            System.out.println("BOT: Closing bank");
+            api.closeBank();
             return 10;
         }
         
-        // Find and chop a tree
+        if (state == State.CHOPPING) {
+            System.out.println("BOT: Was chopping, finding new tree");
+            state = State.IDLE;
+            targetTree = null;
+        }
+        
         return chopTree();
     }
     
     private int chopTree() {
-        // Find nearest tree
         GameObject tree = api.getNearestObject(treeIds);
         
         if (tree == null || tree.isRemoved()) {
@@ -166,15 +126,17 @@ public class WoodcuttingBot extends Bot {
         
         int dist = api.distanceTo(tree);
         
-        // If too far, walk to it first
         if (dist > 2) {
             state = State.WALKING_TO_TREE;
             targetTree = tree;
-            api.walkTo(tree.getX(), tree.getY());
+            boolean walked = api.walkTo(tree.getX(), tree.getY());
+            if (!walked) {
+                state = State.IDLE;
+                return random(100, 300);
+            }
             return 10;
         }
         
-        // We're close enough - chop the tree
         state = State.CHOPPING;
         targetTree = tree;
         api.interactObject(tree);
@@ -184,7 +146,6 @@ public class WoodcuttingBot extends Bot {
     }
     
     private int bankLogs() {
-        // Open bank if not already open
         if (!api.isBankOpen()) {
             api.openBank();
             consecutiveBankFailures++;
@@ -197,7 +158,6 @@ public class WoodcuttingBot extends Bot {
             return random(800, 1200);
         }
         
-        // Deposit all logs
         for (int logId : logIds) {
             int count = api.getInventoryCount(logId);
             if (count > 0) {
@@ -206,41 +166,16 @@ public class WoodcuttingBot extends Bot {
             }
         }
         
-        // Done banking, close bank and continue
         consecutiveBankFailures = 0;
         api.closeBank();
         state = State.IDLE;
         return 10;
     }
     
-    private int countLogs() {
-        int count = 0;
-        for (int logId : logIds) {
-            count += api.getInventoryCount(logId);
-        }
-        return count;
-    }
-    
-    private String arrayToString(int[] arr) {
-        StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < arr.length; i++) {
-            sb.append(arr[i]);
-            if (i < arr.length - 1) sb.append(", ");
-        }
-        sb.append("]");
-        return sb.toString();
-    }
-    
-    /**
-     * Gets the total logs chopped this session.
-     */
     public int getLogsChopped() {
         return logsChopped;
     }
     
-    /**
-     * Gets the current bot state.
-     */
     public State getState() {
         return state;
     }
