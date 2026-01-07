@@ -9,7 +9,7 @@ public class WoodcuttingBot extends Bot {
     private int[] treeIds = { 0, 1, 70 };
     private int[] logIds = { 14 };
     
-    private static final int[] AXE_IDS = { 1056, 156, 1068, 2448, 2460, 4872, 5148, 7140 };
+    private static final int[] AXE_IDS = { 87, 12, 88, 203, 204, 405, 428, 594 };
     
     private static final int[] BANK_NPC_IDS = { 95, 224, 542, 773, 2048, 2049, 2050, 4934, 8068, 19444 };
     
