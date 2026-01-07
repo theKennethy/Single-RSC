@@ -20,8 +20,6 @@ public class WoodcuttingBot extends Bot {
     private int consecutiveBankFailures = 0;
     private int lastTreeX = 0;
     private int lastTreeY = 0;
-    private int treeInteractionCount = 0;
-    private GameObject lastInteractedTree = null;
     
     public Integer areaMinX = null;
     public Integer areaMaxX = null;
@@ -171,21 +169,6 @@ public class WoodcuttingBot extends Bot {
         emptyTreeSearchCount = 0;
         lastTreeX = tree.getX();
         lastTreeY = tree.getY();
-        
-        if (tree.equals(lastInteractedTree)) {
-            treeInteractionCount++;
-            if (treeInteractionCount > 10) {
-                gameMessage("Tree not responding, finding another...");
-                lastInteractedTree = null;
-                treeInteractionCount = 0;
-                state = State.IDLE;
-                targetTree = null;
-                return random(200, 400);
-            }
-        } else {
-            lastInteractedTree = tree;
-            treeInteractionCount = 0;
-        }
         
         int dist = api.distanceTo(tree);
         
