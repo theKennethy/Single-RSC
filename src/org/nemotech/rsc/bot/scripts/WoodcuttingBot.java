@@ -40,14 +40,59 @@ public class WoodcuttingBot extends Bot {
 
     public WoodcuttingBot() {
         super("Woodcutting Bot");
-        setAreaByLocation("seers");
+        autoDetectArea();
     }
     
     public WoodcuttingBot(int[] treeIds, int[] logIds) {
         super("Woodcutting Bot");
         this.treeIds = treeIds;
         this.logIds = logIds;
-        setAreaByLocation("seers");
+        autoDetectArea();
+    }
+    
+    private void autoDetectArea() {
+        int x = api.getX();
+        int y = api.getY();
+        
+        if (x >= 370 && x <= 470 && y >= 530 && y <= 680) {
+            setAreaByLocation("seers");
+        } else if (x >= 280 && x <= 340 && y >= 510 && y <= 580) {
+            setAreaByLocation("falador");
+        } else if (x >= 100 && x <= 160 && y >= 480 && y <= 550) {
+            setAreaByLocation("varrock");
+        } else if (x >= 190 && x <= 240 && y >= 600 && y <= 660) {
+            setAreaByLocation("draynor");
+        } else if (x >= 250 && x <= 290 && y >= 620 && y <= 670) {
+            setAreaByLocation("portsarim");
+        } else if (x >= 350 && x <= 400 && y >= 660 && y <= 710) {
+            setAreaByLocation("karamja");
+        } else if (x >= 70 && x <= 120 && y >= 660 && y <= 720) {
+            setAreaByLocation("alkharid");
+        } else if (x >= 100 && x <= 160 && y >= 620 && y <= 680) {
+            setAreaByLocation("lumbridge");
+        } else if (x >= 190 && x <= 250 && y >= 420 && y <= 480) {
+            setAreaByLocation("edgeville");
+        } else if (x >= 350 && x <= 400 && y >= 470 && y <= 530) {
+            setAreaByLocation("taverly");
+        } else if (x >= 210 && x <= 260 && y >= 490 && y <= 540) {
+            setAreaByLocation("barbarian");
+        } else if (x >= 300 && x <= 350 && y >= 640 && y <= 690) {
+            setAreaByLocation("rimmington");
+        } else if (x >= 420 && x <= 470 && y >= 480 && y <= 530) {
+            setAreaByLocation("catherby");
+        } else if (x >= 520 && x <= 580 && y >= 560 && y <= 620) {
+            setAreaByLocation("ardougne");
+        } else if (x >= 560 && x <= 620 && y >= 720 && y <= 780) {
+            setAreaByLocation("yanille");
+        } else if (x >= 100 && x <= 160 && y >= 3490 && y <= 3550) {
+            setAreaByLocation("lostcity");
+        } else if (x >= 680 && x <= 740 && y >= 500 && y <= 560) {
+            setAreaByLocation("gnome");
+        } else if (x >= 190 && x <= 250 && y >= 720 && y <= 770) {
+            setAreaByLocation("tutorial");
+        } else {
+            setAreaByLocation("seers");
+        }
     }
     
     public void setAreaByLocation(String location) {
