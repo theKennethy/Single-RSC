@@ -752,13 +752,8 @@ public class BotAPI {
         }
         
         if (nearest == null) {
-            for (int dx = -50; dx <= 50; dx++) {
-                for (int dy = -50; dy <= 50; dy++) {
-                    int x = getX() + dx;
-                    int y = getY() + dy;
-                    
-                    if (x < minX || x > maxX || y < minY || y > maxY) continue;
-                    
+            for (int x = minX; x <= maxX; x += 10) {
+                for (int y = minY; y <= maxY; y += 10) {
                     ActiveTile tile = World.getWorld().getTile(x, y);
                     if (tile == null || !tile.hasGameObject()) continue;
                     
@@ -778,6 +773,7 @@ public class BotAPI {
                 }
             }
         }
+        
         return nearest;
     }
     
