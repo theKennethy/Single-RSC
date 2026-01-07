@@ -725,6 +725,63 @@ public class BotAPI {
     }
     
     /**
+     * Finds the nearest game object by ID within specified area bounds.
+     */
+    public GameObject getNearestObjectInArea(int[] ids, int minX, int maxX, int minY, int maxY) {
+        GameObject nearest = null;
+        int nearestDist = Integer.MAX_VALUE;
+        
+        for (GameObject obj : RegionManager.getLocalObjects(getPlayer())) {
+            if (obj == null || obj.isRemoved()) continue;
+            
+            int x = obj.getX();
+            int y = obj.getY();
+            
+            if (x < minX || x > maxX || y < minY || y > maxY) continue;
+            
+            for (int id : ids) {
+                if (obj.getID() == id) {
+                    int dist = distanceTo(obj);
+                    if (dist < nearestDist) {
+                        nearestDist = dist;
+                        nearest = obj;
+                    }
+                    break;
+                }
+            }
+        }
+        
+        if (nearest == null) {
+            for (int dx = -50; dx <= 50; dx++) {
+                for (int dy = -50; dy <= 50; dy++) {
+                    int x = getX() + dx;
+                    int y = getY() + dy;
+                    
+                    if (x < minX || x > maxX || y < minY || y > maxY) continue;
+                    
+                    ActiveTile tile = World.getWorld().getTile(x, y);
+                    if (tile == null || !tile.hasGameObject()) continue;
+                    
+                    GameObject obj = tile.getGameObject();
+                    if (obj == null || obj.isRemoved()) continue;
+                    
+                    for (int id : ids) {
+                        if (obj.getID() == id) {
+                            int dist = distanceTo(obj);
+                            if (dist < nearestDist) {
+                                nearestDist = dist;
+                                nearest = obj;
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return nearest;
+    }
+    
+    /**
      * Debug method: Lists all objects in range and their IDs.
      * Useful for finding correct object IDs.
      */

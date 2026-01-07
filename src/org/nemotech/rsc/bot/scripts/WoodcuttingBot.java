@@ -253,7 +253,12 @@ public class WoodcuttingBot extends Bot {
             return 0;
         }
         
-        GameObject tree = api.getNearestObject(treeIds);
+        GameObject tree;
+        if (areaMinX != null && areaMaxX != null && areaMinY != null && areaMaxY != null) {
+            tree = api.getNearestObjectInArea(treeIds, areaMinX, areaMaxX, areaMinY, areaMaxY);
+        } else {
+            tree = api.getNearestObject(treeIds);
+        }
         
         if (tree == null || tree.isRemoved()) {
             state = State.IDLE;
@@ -266,7 +271,7 @@ public class WoodcuttingBot extends Bot {
                     gameMessage("No trees found nearby, wandering to find more...");
                     wanderToFindTrees();
                 } else {
-                    gameMessage("No trees found nearby. Enable wander to search wider areas.");
+                    gameMessage("No trees found nearby in area. Enable wander to search wider areas.");
                 }
             }
             return random(500, 1500);
