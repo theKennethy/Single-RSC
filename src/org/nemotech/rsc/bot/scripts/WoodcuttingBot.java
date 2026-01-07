@@ -338,20 +338,27 @@ public class WoodcuttingBot extends Bot {
                 targetTree = tree;
                 consecutiveWalkFailures = 0;
             }
-            boolean walked = api.walkTo(tree.getX(), tree.getY());
-            if (!walked) {
-                consecutiveWalkFailures++;
-                if (consecutiveWalkFailures > 3) {
-                    gameMessage("Can't reach tree at (" + tree.getX() + ", " + tree.getY() + "), finding another...");
-                    targetTree = null;
-                    consecutiveWalkFailures = 0;
+            if (isInArea(tree.getX(), tree.getY())) {
+                boolean walked = api.walkTo(tree.getX(), tree.getY());
+                if (!walked) {
+                    consecutiveWalkFailures++;
+                    if (consecutiveWalkFailures > 3) {
+                        gameMessage("Can't reach tree at (" + tree.getX() + ", " + tree.getY() + "), finding another...");
+                        targetTree = null;
+                        consecutiveWalkFailures = 0;
+                        state = State.IDLE;
+                        return random(500, 1000);
+                    }
                     state = State.IDLE;
-                    return random(500, 1000);
+                    return random(200, 500);
                 }
+                consecutiveWalkFailures = 0;
+            } else {
+                gameMessage("Tree is outside area bounds, finding another...");
+                targetTree = null;
                 state = State.IDLE;
                 return random(200, 500);
             }
-            consecutiveWalkFailures = 0;
             return 10;
         }
         
