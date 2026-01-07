@@ -174,7 +174,7 @@ public class WoodcuttingBot extends Bot {
         
         if (tree.equals(lastInteractedTree)) {
             treeInteractionCount++;
-            if (treeInteractionCount > 3) {
+            if (treeInteractionCount > 10) {
                 gameMessage("Tree not responding, finding another...");
                 lastInteractedTree = null;
                 treeInteractionCount = 0;
