@@ -298,29 +298,15 @@ public class WoodcuttingBot extends Bot {
         if (!api.isBankOpen()) {
             if (hasBankLocation && !isAtBank()) {
                 state = State.WALKING_TO_BANK;
-                System.out.println("BOT: Walking to bank at (" + bankX + ", " + bankY + ")");
                 boolean walked = api.walkTo(bankX, bankY);
                 if (!walked) {
-                    System.out.println("BOT: Failed to walk to bank, using ::bank command");
+                    System.out.println("BOT: Walk failed, using ::bank");
                 }
                 return random(500, 1000);
             }
             
-            NPC banker = findNearestBanker();
-            if (banker != null && api.distanceTo(banker) <= 20) {
-                api.talkToNpc(banker);
-                consecutiveBankFailures = 0;
-                return random(1000, 1500);
-            }
-            
             api.openBank();
-            consecutiveBankFailures++;
-            if (consecutiveBankFailures > 3) {
-                gameMessage("@red@Bank open failed, using ::bank command...");
-                api.sendMessage("::bank");
-                consecutiveBankFailures = 0;
-            }
-            return random(1000, 1500);
+            return random(500, 1000);
         }
         
         for (int logId : logIds) {
@@ -331,7 +317,6 @@ public class WoodcuttingBot extends Bot {
             }
         }
         
-        consecutiveBankFailures = 0;
         api.closeBank();
         state = State.IDLE;
         return 10;
