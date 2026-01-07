@@ -128,8 +128,20 @@ public class WoodcuttingBot extends Bot {
         }
         
         if (state == State.CHOPPING) {
-            state = State.IDLE;
-            targetTree = null;
+            if (targetTree == null || targetTree.isRemoved() || api.isInventoryFull()) {
+                state = State.IDLE;
+                targetTree = null;
+            } else {
+                int dist = api.distanceTo(targetTree);
+                if (dist > 1) {
+                    state = State.IDLE;
+                    targetTree = null;
+                } else {
+                    api.interactObject(targetTree);
+                    treesChopped++;
+                }
+            }
+            return 500;
         }
         
         return chopTree();
