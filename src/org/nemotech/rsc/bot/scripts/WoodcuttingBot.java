@@ -40,12 +40,21 @@ public class WoodcuttingBot extends Bot {
 
     public WoodcuttingBot() {
         super("Woodcutting Bot");
+        setSeersVillageBounds();
     }
     
     public WoodcuttingBot(int[] treeIds, int[] logIds) {
         super("Woodcutting Bot");
         this.treeIds = treeIds;
         this.logIds = logIds;
+        setSeersVillageBounds();
+    }
+    
+    private void setSeersVillageBounds() {
+        areaMinX = 370;
+        areaMaxX = 470;
+        areaMinY = 530;
+        areaMaxY = 680;
     }
     
     public void setTreeIds(int... ids) {
