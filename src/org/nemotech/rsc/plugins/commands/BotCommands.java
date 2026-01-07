@@ -41,7 +41,7 @@ public class BotCommands extends Plugin implements CommandListener {
     
     public String[] getCommands() {
         return new String[] { 
-            "bot", "woodcut", "wc", "fish", "combat", "fight", 
+            "bot", "botwand", "woodcut", "wc", "fish", "combat", "fight", 
             "mine", "mining", "agility", "agil", "cook", "cooking",
             "firemaking", "fm", "thieve", "thieving", "pickpocket",
             "prayer", "pray", "ranged", "range", "magic", "mage",
@@ -57,6 +57,12 @@ public class BotCommands extends Plugin implements CommandListener {
         // Main bot command
         if (command.equals("bot")) {
             handleBotCommand(args, player);
+            return;
+        }
+        
+        // Bot wander toggle command
+        if (command.equals("botwand")) {
+            handleBotWandCommand(args, player);
             return;
         }
         
@@ -235,6 +241,40 @@ public class BotCommands extends Plugin implements CommandListener {
         player.getSender().sendMessage("@whi@::cook, ::fm, ::smith, ::fletch");
         player.getSender().sendMessage("@whi@::craft, ::herblaw");
         player.getSender().sendMessage("@whi@::stopbot - Stop all bots");
+    }
+    
+    private void handleBotWandCommand(String[] args, Player player) {
+        BotManager manager = BotManager.getInstance();
+        Bot active = manager.getActiveBot();
+        
+        if (active == null) {
+            player.getSender().sendMessage("@cya@[Bot] @red@No active bot running.");
+            return;
+        }
+        
+        if (active instanceof WoodcuttingBot) {
+            WoodcuttingBot woodbot = (WoodcuttingBot) active;
+            
+            if (args.length == 0) {
+                boolean current = woodbot.isWanderEnabled();
+                player.getSender().sendMessage("@cya@[Bot] @whi@Wander is currently: " + (current ? "@gre@ON" : "@red@OFF"));
+                player.getSender().sendMessage("@whi@Use ::botwand on or ::botwand off to toggle.");
+                return;
+            }
+            
+            String setting = args[0].toLowerCase();
+            if (setting.equals("on") || setting.equals("true") || setting.equals("yes")) {
+                woodbot.setWanderEnabled(true);
+                player.getSender().sendMessage("@cya@[Bot] @gre@Wander enabled - bot will search wider areas.");
+            } else if (setting.equals("off") || setting.equals("false") || setting.equals("no")) {
+                woodbot.setWanderEnabled(false);
+                player.getSender().sendMessage("@cya@[Bot] @red@Wander disabled - bot will stay in current area.");
+            } else {
+                player.getSender().sendMessage("@cya@[Bot] @whi@Usage: ::botwand on | off");
+            }
+        } else {
+            player.getSender().sendMessage("@cya@[Bot] @red@This command only works with Woodcutting bot.");
+        }
     }
     
     private void listBots(Player player) {

@@ -2,14 +2,19 @@ package org.nemotech.rsc.bot.scripts;
 
 import org.nemotech.rsc.bot.Bot;
 import org.nemotech.rsc.model.GameObject;
+import org.nemotech.rsc.model.NPC;
 
 public class WoodcuttingBot extends Bot {
     
     private int[] treeIds = { 0, 1, 70 };
     private int[] logIds = { 14 };
     
+    private static final int[] AXE_IDS = { 1056, 156, 1068, 2448, 2460, 4872, 5148, 7140 };
+    
+    private static final int[] BANK_NPC_IDS = { 95, 224, 542, 773, 2048, 2049, 2050, 4934, 8068, 19444 };
+    
     private enum State {
-        IDLE, WALKING_TO_TREE, CHOPPING, BANKING
+        IDLE, WALKING_TO_TREE, CHOPPING, WALKING_TO_BANK, BANKING
     }
     
     private State state = State.IDLE;
@@ -18,6 +23,12 @@ public class WoodcuttingBot extends Bot {
     private int treesChopped = 0;
     private int emptyTreeSearchCount = 0;
     private int consecutiveBankFailures = 0;
+    private int consecutiveWalkFailures = 0;
+    
+    private Integer bankX = null;
+    private Integer bankY = null;
+    private boolean hasBankLocation = false;
+    private boolean wanderEnabled = true;
     
     private long lastDebugTime = 0;
     private long stuckTime = 0;
@@ -40,12 +51,42 @@ public class WoodcuttingBot extends Bot {
         this.logIds = ids;
     }
     
+    public void setBankLocation(int x, int y) {
+        this.bankX = x;
+        this.bankY = y;
+        this.hasBankLocation = true;
+    }
+    
+    public void clearBankLocation() {
+        this.bankX = null;
+        this.bankY = null;
+        this.hasBankLocation = false;
+    }
+    
+    public void setWanderEnabled(boolean enabled) {
+        this.wanderEnabled = enabled;
+    }
+    
+    public boolean isWanderEnabled() {
+        return wanderEnabled;
+    }
+    
     @Override
     public void onStart() {
         super.onStart();
         logsChopped = 0;
         state = State.IDLE;
         gameMessage("Woodcutting bot started!");
+        
+        if (!hasAxe()) {
+            gameMessage("@red@WARNING: No axe found! You need an axe to chop trees.");
+        }
+        
+        if (hasBankLocation) {
+            gameMessage("Bank location set to: (" + bankX + ", " + bankY + ")");
+        } else {
+            gameMessage("No bank location set - will attempt to use nearest banker.");
+        }
     }
     
     @Override
@@ -55,6 +96,19 @@ public class WoodcuttingBot extends Bot {
             api.closeBank();
         }
         gameMessage("Woodcutting bot stopped. Total logs banked: " + logsChopped);
+    }
+    
+    private boolean hasAxe() {
+        for (int axeId : AXE_IDS) {
+            if (api.hasItem(axeId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    private NPC findNearestBanker() {
+        return api.getNearestNpc(BANK_NPC_IDS);
     }
     
     @Override
@@ -85,6 +139,11 @@ public class WoodcuttingBot extends Bot {
         }
         stuckTime = 0;
 
+        if (api.handleFatigue()) {
+            gameMessage("Rested at a bed - fatigue reset.");
+            return random(500, 1000);
+        }
+
         if (invFull) {
             System.out.println("BOT: Inventory full, going to bank");
             state = State.BANKING;
@@ -98,8 +157,16 @@ public class WoodcuttingBot extends Bot {
             return 10;
         }
         
-        // If we're chopping, reset to find a new tree
         if (state == State.CHOPPING) {
+            if (targetTree != null && !targetTree.isRemoved()) {
+                int dist = api.distanceTo(targetTree);
+                if (dist <= 2) {
+                    state = State.CHOPPING;
+                    api.interactObject(targetTree);
+                    treesChopped++;
+                    return 10;
+                }
+            }
             state = State.IDLE;
             targetTree = null;
         }
@@ -108,6 +175,12 @@ public class WoodcuttingBot extends Bot {
     }
     
     private int chopTree() {
+        if (!hasAxe()) {
+            gameMessage("@red@No axe found! Stopping bot.");
+            stop();
+            return 0;
+        }
+        
         GameObject tree = api.getNearestObject(treeIds);
         
         if (tree == null || tree.isRemoved()) {
@@ -115,25 +188,48 @@ public class WoodcuttingBot extends Bot {
             targetTree = null;
             emptyTreeSearchCount++;
             
-            if (emptyTreeSearchCount > 5) {
-                gameMessage("No trees found nearby, searching...");
+            if (emptyTreeSearchCount > 2) {
                 emptyTreeSearchCount = 0;
+                if (wanderEnabled) {
+                    gameMessage("No trees found nearby, wandering to find more...");
+                    wanderToFindTrees();
+                } else {
+                    gameMessage("No trees found nearby. Enable wander to search wider areas.");
+                }
             }
             return random(500, 1500);
         }
         
         emptyTreeSearchCount = 0;
         
+        if (targetTree != null && targetTree.equals(tree) && tree.isRemoved()) {
+            state = State.IDLE;
+            targetTree = null;
+            return random(100, 300);
+        }
+        
         int dist = api.distanceTo(tree);
         
         if (dist > 2) {
             state = State.WALKING_TO_TREE;
-            targetTree = tree;
+            if (!tree.equals(targetTree)) {
+                targetTree = tree;
+                consecutiveWalkFailures = 0;
+            }
             boolean walked = api.walkTo(tree.getX(), tree.getY());
             if (!walked) {
+                consecutiveWalkFailures++;
+                if (consecutiveWalkFailures > 3) {
+                    gameMessage("Can't reach tree at (" + tree.getX() + ", " + tree.getY() + "), finding another...");
+                    targetTree = null;
+                    consecutiveWalkFailures = 0;
+                    state = State.IDLE;
+                    return random(500, 1000);
+                }
                 state = State.IDLE;
-                return random(100, 300);
+                return random(200, 500);
             }
+            consecutiveWalkFailures = 0;
             return 10;
         }
         
@@ -141,19 +237,59 @@ public class WoodcuttingBot extends Bot {
         targetTree = tree;
         api.interactObject(tree);
         treesChopped++;
+        consecutiveWalkFailures = 0;
         
         return 10;
     }
     
+    private void wanderToFindTrees() {
+        int currentX = api.getX();
+        int currentY = api.getY();
+        
+        int[] offsets = { -20, -15, -10, 10, 15, 20 };
+        int randomOffsetX = offsets[random(0, offsets.length - 1)];
+        int randomOffsetY = offsets[random(0, offsets.length - 1)];
+        
+        int newX = currentX + randomOffsetX;
+        int newY = currentY + randomOffsetY;
+        
+        api.walkTo(newX, newY);
+    }
+    
     private int bankLogs() {
         if (!api.isBankOpen()) {
+            if (hasBankLocation && !isAtBank()) {
+                state = State.WALKING_TO_BANK;
+                System.out.println("BOT: Walking to bank at (" + bankX + ", " + bankY + ")");
+                boolean walked = api.walkTo(bankX, bankY);
+                if (!walked) {
+                    System.out.println("BOT: Failed to walk to bank, trying nearest banker");
+                    state = State.BANKING;
+                }
+                return random(500, 1000);
+            }
+            
+            NPC banker = findNearestBanker();
+            if (banker != null && api.distanceTo(banker) <= 8) {
+                api.talkToNpc(banker);
+                consecutiveBankFailures++;
+                if (consecutiveBankFailures > 5) {
+                    gameMessage("@red@Bank interaction failed, dropping logs...");
+                    return dropLogsAndContinue();
+                }
+                return random(1500, 2500);
+            }
+            
+            if (!hasBankLocation && banker == null) {
+                gameMessage("@red@No bank or banker found! Dropping logs...");
+                return dropLogsAndContinue();
+            }
+            
             api.openBank();
             consecutiveBankFailures++;
             if (consecutiveBankFailures > 5) {
-                gameMessage("@red@Bank command failed, continuing to chop...");
-                consecutiveBankFailures = 0;
-                state = State.IDLE;
-                return random(1000, 2000);
+                gameMessage("@red@Bank command failed, dropping logs...");
+                return dropLogsAndContinue();
             }
             return random(1500, 2500);
         }
@@ -170,6 +306,27 @@ public class WoodcuttingBot extends Bot {
         api.closeBank();
         state = State.IDLE;
         return 10;
+    }
+    
+    private boolean isAtBank() {
+        if (!hasBankLocation) {
+            return api.isBankOpen();
+        }
+        return api.distanceTo(bankX, bankY) <= 3;
+    }
+    
+    private int dropLogsAndContinue() {
+        for (int logId : logIds) {
+            int count = api.getInventoryCount(logId);
+            if (count > 0) {
+                for (int i = 0; i < count; i++) {
+                    api.dropItemById(logId);
+                }
+            }
+        }
+        consecutiveBankFailures = 0;
+        state = State.IDLE;
+        return random(500, 1000);
     }
     
     public int getLogsChopped() {

@@ -674,7 +674,7 @@ public class BotAPI {
     public GameObject getNearestObject(int... ids) {
         GameObject nearest = null;
         int nearestDist = Integer.MAX_VALUE;
-        int searchRadius = 100;
+        int searchRadius = 1000;
         
         // Get all objects from surrounding regions (no distance filter)
         for (GameObject obj : RegionManager.getLocalObjects(getPlayer())) {
