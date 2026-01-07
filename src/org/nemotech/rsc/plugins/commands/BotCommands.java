@@ -299,8 +299,9 @@ public class BotCommands extends Plugin implements CommandListener {
             WoodcuttingBot woodbot = (WoodcuttingBot) active;
             
             if (args.length == 0) {
-                player.getSender().sendMessage("@cya@[Bot] @whi@Usage: ::botarea <minX> <maxX> <minY> <maxY>");
-                player.getSender().sendMessage("@whi@Example: ::botarea 400 500 600 700");
+                player.getSender().sendMessage("@cya@[Bot] @whi@Usage: ::botarea <location>");
+                player.getSender().sendMessage("@whi@Locations: varrock, falador, draynor, portsarim, karamja, alkharid, lumbridge, edgeville, taverly, seers, barbarian, rimmington, catherby, ardougne, yanille, lostcity, gnome, tutorial");
+                player.getSender().sendMessage("@whi@Or use coords: ::botarea <minX> <maxX> <minY> <maxY>");
                 player.getSender().sendMessage("@whi@Use ::botarea clear to remove bounds");
                 if (woodbot.areaMinX != null) {
                     player.getSender().sendMessage("@whi@Current area: " + woodbot.areaMinX + "-" + woodbot.areaMaxX + ", " + woodbot.areaMinY + "-" + woodbot.areaMaxY);
@@ -316,8 +317,26 @@ public class BotCommands extends Plugin implements CommandListener {
                 return;
             }
             
+            if (args.length == 1) {
+                String loc = args[0].toLowerCase();
+                String[] validLocs = {"varrock", "falador", "draynor", "portsarim", "karamja", "alkharid", "lumbridge", "edgeville", "taverly", "seers", "seersvillage", "barbarian", "rimmington", "catherby", "ardougne", "yanille", "lostcity", "gnome", "tutorial"};
+                boolean valid = false;
+                for (String l : validLocs) {
+                    if (l.equals(loc)) {
+                        valid = true;
+                        break;
+                    }
+                }
+                if (valid) {
+                    woodbot.setAreaByLocation(loc);
+                    player.getSender().sendMessage("@cya@[Bot] @gre@Area set to: " + loc.toUpperCase());
+                    player.getSender().sendMessage("@cya@[Bot] @whi@Bounds: " + woodbot.areaMinX + "-" + woodbot.areaMaxX + ", " + woodbot.areaMinY + "-" + woodbot.areaMaxY);
+                    return;
+                }
+            }
+            
             if (args.length < 4) {
-                player.getSender().sendMessage("@cya@[Bot] @red@Need 4 coordinates: minX maxX minY maxY");
+                player.getSender().sendMessage("@cya@[Bot] @red@Invalid location. Use ::botarea <location> or ::botarea <minX> <maxX> <minY> <maxY>");
                 return;
             }
             

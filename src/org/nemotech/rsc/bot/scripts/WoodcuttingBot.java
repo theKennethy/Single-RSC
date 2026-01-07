@@ -40,21 +40,58 @@ public class WoodcuttingBot extends Bot {
 
     public WoodcuttingBot() {
         super("Woodcutting Bot");
-        setSeersVillageBounds();
+        setAreaByLocation("seers");
     }
     
     public WoodcuttingBot(int[] treeIds, int[] logIds) {
         super("Woodcutting Bot");
         this.treeIds = treeIds;
         this.logIds = logIds;
-        setSeersVillageBounds();
+        setAreaByLocation("seers");
     }
     
-    private void setSeersVillageBounds() {
-        areaMinX = 370;
-        areaMaxX = 470;
-        areaMinY = 530;
-        areaMaxY = 680;
+    public void setAreaByLocation(String location) {
+        switch (location.toLowerCase()) {
+            case "varrock":
+                areaMinX = 100; areaMaxX = 160; areaMinY = 480; areaMaxY = 550; break;
+            case "falador":
+                areaMinX = 280; areaMaxX = 340; areaMinY = 510; areaMaxY = 580; break;
+            case "draynor":
+                areaMinX = 190; areaMaxX = 240; areaMinY = 600; areaMaxY = 660; break;
+            case "portsarim":
+                areaMinX = 250; areaMaxX = 290; areaMinY = 620; areaMaxY = 670; break;
+            case "karamja":
+                areaMinX = 350; areaMaxX = 400; areaMinY = 660; areaMaxY = 710; break;
+            case "alkharid":
+                areaMinX = 70; areaMaxX = 120; areaMinY = 660; areaMaxY = 720; break;
+            case "lumbridge":
+                areaMinX = 100; areaMaxX = 160; areaMinY = 620; areaMaxY = 680; break;
+            case "edgeville":
+                areaMinX = 190; areaMaxX = 250; areaMinY = 420; areaMaxY = 480; break;
+            case "taverly":
+                areaMinX = 350; areaMaxX = 400; areaMinY = 470; areaMaxY = 530; break;
+            case "seers":
+            case "seersvillage":
+                areaMinX = 370; areaMaxX = 470; areaMinY = 530; areaMaxY = 680; break;
+            case "barbarian":
+                areaMinX = 210; areaMaxX = 260; areaMinY = 490; areaMaxY = 540; break;
+            case "rimmington":
+                areaMinX = 300; areaMaxX = 350; areaMinY = 640; areaMaxY = 690; break;
+            case "catherby":
+                areaMinX = 420; areaMaxX = 470; areaMinY = 480; areaMaxY = 530; break;
+            case "ardougne":
+                areaMinX = 520; areaMaxX = 580; areaMinY = 560; areaMaxY = 620; break;
+            case "yanille":
+                areaMinX = 560; areaMaxX = 620; areaMinY = 720; areaMaxY = 780; break;
+            case "lostcity":
+                areaMinX = 100; areaMaxX = 160; areaMinY = 3490; areaMaxY = 3550; break;
+            case "gnome":
+                areaMinX = 680; areaMaxX = 740; areaMinY = 500; areaMaxY = 560; break;
+            case "tutorial":
+                areaMinX = 190; areaMaxX = 250; areaMinY = 720; areaMaxY = 770; break;
+            default:
+                areaMinX = 370; areaMaxX = 470; areaMinY = 530; areaMaxY = 680; break;
+        }
     }
     
     public void setTreeIds(int... ids) {
