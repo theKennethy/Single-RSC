@@ -2,7 +2,6 @@ package org.nemotech.rsc.bot.scripts;
 
 import org.nemotech.rsc.bot.Bot;
 import org.nemotech.rsc.model.GameObject;
-import org.nemotech.rsc.model.NPC;
 
 public class WoodcuttingBot extends Bot {
     
@@ -10,8 +9,6 @@ public class WoodcuttingBot extends Bot {
     private int[] logIds = { 14 };
     
     private static final int[] AXE_IDS = { 87, 12, 88, 203, 204, 405, 428, 594 };
-    
-    private static final int[] BANK_NPC_IDS = { 95, 224, 542, 773, 2048, 2049, 2050, 4934, 8068, 19444 };
     
     private enum State {
         IDLE, WALKING_TO_TREE, CHOPPING, WALKING_TO_BANK, BANKING
@@ -22,7 +19,6 @@ public class WoodcuttingBot extends Bot {
     private int logsChopped = 0;
     private int treesChopped = 0;
     private int emptyTreeSearchCount = 0;
-    private int consecutiveBankFailures = 0;
     private int consecutiveWalkFailures = 0;
     
     private Integer bankX = null;
@@ -97,45 +93,25 @@ public class WoodcuttingBot extends Bot {
     
     public void setAreaByLocation(String location) {
         switch (location.toLowerCase()) {
-            case "varrock":
-                areaMinX = 100; areaMaxX = 160; areaMinY = 480; areaMaxY = 550; break;
-            case "falador":
-                areaMinX = 280; areaMaxX = 340; areaMinY = 510; areaMaxY = 580; break;
-            case "draynor":
-                areaMinX = 190; areaMaxX = 240; areaMinY = 600; areaMaxY = 660; break;
-            case "portsarim":
-                areaMinX = 250; areaMaxX = 290; areaMinY = 620; areaMaxY = 670; break;
-            case "karamja":
-                areaMinX = 350; areaMaxX = 400; areaMinY = 660; areaMaxY = 710; break;
-            case "alkharid":
-                areaMinX = 70; areaMaxX = 120; areaMinY = 660; areaMaxY = 720; break;
-            case "lumbridge":
-                areaMinX = 100; areaMaxX = 160; areaMinY = 620; areaMaxY = 680; break;
-            case "edgeville":
-                areaMinX = 190; areaMaxX = 250; areaMinY = 420; areaMaxY = 480; break;
-            case "taverly":
-                areaMinX = 350; areaMaxX = 400; areaMinY = 470; areaMaxY = 530; break;
-            case "seers":
-            case "seersvillage":
-                areaMinX = 370; areaMaxX = 470; areaMinY = 530; areaMaxY = 680; break;
-            case "barbarian":
-                areaMinX = 210; areaMaxX = 260; areaMinY = 490; areaMaxY = 540; break;
-            case "rimmington":
-                areaMinX = 300; areaMaxX = 350; areaMinY = 640; areaMaxY = 690; break;
-            case "catherby":
-                areaMinX = 420; areaMaxX = 470; areaMinY = 480; areaMaxY = 530; break;
-            case "ardougne":
-                areaMinX = 520; areaMaxX = 580; areaMinY = 560; areaMaxY = 620; break;
-            case "yanille":
-                areaMinX = 560; areaMaxX = 620; areaMinY = 720; areaMaxY = 780; break;
-            case "lostcity":
-                areaMinX = 100; areaMaxX = 160; areaMinY = 3490; areaMaxY = 3550; break;
-            case "gnome":
-                areaMinX = 680; areaMaxX = 740; areaMinY = 500; areaMaxY = 560; break;
-            case "tutorial":
-                areaMinX = 190; areaMaxX = 250; areaMinY = 720; areaMaxY = 770; break;
-            default:
-                areaMinX = 370; areaMaxX = 470; areaMinY = 530; areaMaxY = 680; break;
+            case "varrock": areaMinX = 100; areaMaxX = 160; areaMinY = 480; areaMaxY = 550; break;
+            case "falador": areaMinX = 280; areaMaxX = 340; areaMinY = 510; areaMaxY = 580; break;
+            case "draynor": areaMinX = 190; areaMaxX = 240; areaMinY = 600; areaMaxY = 660; break;
+            case "portsarim": areaMinX = 250; areaMaxX = 290; areaMinY = 620; areaMaxY = 670; break;
+            case "karamja": areaMinX = 350; areaMaxX = 400; areaMinY = 660; areaMaxY = 710; break;
+            case "alkharid": areaMinX = 70; areaMaxX = 120; areaMinY = 660; areaMaxY = 720; break;
+            case "lumbridge": areaMinX = 100; areaMaxX = 160; areaMinY = 620; areaMaxY = 680; break;
+            case "edgeville": areaMinX = 190; areaMaxX = 250; areaMinY = 420; areaMaxY = 480; break;
+            case "taverly": areaMinX = 350; areaMaxX = 400; areaMinY = 470; areaMaxY = 530; break;
+            case "seers": case "seersvillage": areaMinX = 370; areaMaxX = 470; areaMinY = 530; areaMaxY = 680; break;
+            case "barbarian": areaMinX = 210; areaMaxX = 260; areaMinY = 490; areaMaxY = 540; break;
+            case "rimmington": areaMinX = 300; areaMaxX = 350; areaMinY = 640; areaMaxY = 690; break;
+            case "catherby": areaMinX = 420; areaMaxX = 470; areaMinY = 480; areaMaxY = 530; break;
+            case "ardougne": areaMinX = 520; areaMaxX = 580; areaMinY = 560; areaMaxY = 620; break;
+            case "yanille": areaMinX = 560; areaMaxX = 620; areaMinY = 720; areaMaxY = 780; break;
+            case "lostcity": areaMinX = 100; areaMaxX = 160; areaMinY = 3490; areaMaxY = 3550; break;
+            case "gnome": areaMinX = 680; areaMaxX = 740; areaMinY = 500; areaMaxY = 560; break;
+            case "tutorial": areaMinX = 190; areaMaxX = 250; areaMinY = 720; areaMaxY = 770; break;
+            default: areaMinX = 370; areaMaxX = 470; areaMinY = 530; areaMaxY = 680; break;
         }
     }
     
@@ -167,18 +143,18 @@ public class WoodcuttingBot extends Bot {
         return wanderEnabled;
     }
     
-    public void setAreaBounds(int minX, int maxX, int minY, int maxY) {
-        this.areaMinX = minX;
-        this.areaMaxX = maxX;
-        this.areaMinY = minY;
-        this.areaMaxY = maxY;
-    }
-    
     public void clearAreaBounds() {
         this.areaMinX = null;
         this.areaMaxX = null;
         this.areaMinY = null;
         this.areaMaxY = null;
+    }
+    
+    public void setAreaBounds(int minX, int maxX, int minY, int maxY) {
+        this.areaMinX = minX;
+        this.areaMaxX = maxX;
+        this.areaMinY = minY;
+        this.areaMaxY = maxY;
     }
     
     public boolean isInArea(int x, int y) {
@@ -202,7 +178,7 @@ public class WoodcuttingBot extends Bot {
         if (hasBankLocation) {
             gameMessage("Bank location set to: (" + bankX + ", " + bankY + ")");
         } else {
-            gameMessage("No bank location set - will attempt to use nearest banker.");
+            gameMessage("Will use ::bank to deposit logs.");
         }
     }
     
@@ -224,52 +200,29 @@ public class WoodcuttingBot extends Bot {
         return false;
     }
     
-    private NPC findNearestBanker() {
-        return api.getNearestNpc(BANK_NPC_IDS);
-    }
-    
     @Override
     public int loop() {
         boolean busy = api.isBusy();
         boolean moving = api.isMoving();
-        int invCount = api.getInventorySize();
         boolean invFull = api.isInventoryFull();
         boolean bankOpen = api.isBankOpen();
 
-        long now = System.currentTimeMillis();
-        if (now - lastDebugTime > 3000) {
-            lastDebugTime = now;
-            System.out.println("BOT: state=" + state + " busy=" + busy + " moving=" + moving + 
-                " inv=" + invCount + " bank=" + bankOpen);
-        }
-
         if (busy || moving) {
-            if (stuckTime == 0) {
-                stuckTime = now;
-            } else if (now - stuckTime > 30000) {
-                System.out.println("BOT: Recovering from stuck state");
-                stuckTime = 0;
-                state = State.IDLE;
-                return 10;
-            }
             return 10;
         }
-        stuckTime = 0;
-
+        
         if (api.handleFatigue()) {
             gameMessage("Rested at a bed - fatigue reset.");
             return random(500, 1000);
         }
 
         if (invFull) {
-            System.out.println("BOT: Inventory full, going to bank");
             state = State.BANKING;
             targetTree = null;
             return bankLogs();
         }
         
         if (bankOpen) {
-            System.out.println("BOT: Closing bank");
             api.closeBank();
             return 10;
         }
@@ -313,36 +266,17 @@ public class WoodcuttingBot extends Bot {
             if (emptyTreeSearchCount > 2) {
                 emptyTreeSearchCount = 0;
                 if (wanderEnabled) {
-                    gameMessage("No trees found, searching outside area bounds...");
+                    gameMessage("No trees found, searching outside area...");
                     wanderToFindTreesOutsideArea();
                 } else {
-                    gameMessage("Searching for trees in area...");
+                    gameMessage("Searching for trees...");
                     wanderToFindTrees();
                 }
-                return random(500, 1000);
-            }
-        }
-        
-        emptyTreeSearchCount = 0;
-        
-        if (tree == null || tree.isRemoved()) {
-            state = State.IDLE;
-            targetTree = null;
-            emptyTreeSearchCount++;
-            
-            if (emptyTreeSearchCount > 2) {
-                emptyTreeSearchCount = 0;
-                if (wanderEnabled) {
-                    gameMessage("No trees found, searching outside area bounds...");
-                    wanderToFindTreesOutsideArea();
-                } else {
-                    gameMessage("Searching for trees in area...");
-                    wanderToFindTrees();
-                }
-                return random(500, 1000);
             }
             return random(500, 1500);
         }
+        
+        emptyTreeSearchCount = 0;
         
         if (targetTree != null && targetTree.equals(tree) && tree.isRemoved()) {
             state = State.IDLE;
@@ -358,27 +292,20 @@ public class WoodcuttingBot extends Bot {
                 targetTree = tree;
                 consecutiveWalkFailures = 0;
             }
-            if (isInArea(tree.getX(), tree.getY())) {
-                boolean walked = api.walkTo(tree.getX(), tree.getY());
-                if (!walked) {
-                    consecutiveWalkFailures++;
-                    if (consecutiveWalkFailures > 3) {
-                        gameMessage("Can't reach tree at (" + tree.getX() + ", " + tree.getY() + "), finding another...");
-                        targetTree = null;
-                        consecutiveWalkFailures = 0;
-                        state = State.IDLE;
-                        return random(500, 1000);
-                    }
+            boolean walked = api.walkTo(tree.getX(), tree.getY());
+            if (!walked) {
+                consecutiveWalkFailures++;
+                if (consecutiveWalkFailures > 3) {
+                    gameMessage("Can't reach tree, finding another...");
+                    targetTree = null;
+                    consecutiveWalkFailures = 0;
                     state = State.IDLE;
-                    return random(200, 500);
+                    return random(500, 1000);
                 }
-                consecutiveWalkFailures = 0;
-            } else {
-                gameMessage("Tree is outside area bounds, finding another...");
-                targetTree = null;
                 state = State.IDLE;
                 return random(200, 500);
             }
+            consecutiveWalkFailures = 0;
             return 10;
         }
         
@@ -392,29 +319,13 @@ public class WoodcuttingBot extends Bot {
     }
     
     private void wanderToFindTrees() {
-        if (!wanderEnabled) {
-            return;
-        }
-        
         int currentX = api.getX();
         int currentY = api.getY();
         
-        int[] offsets = { -20, -15, -10, 10, 15, 20 };
-        int randomOffsetX = offsets[random(0, offsets.length - 1)];
-        int randomOffsetY = offsets[random(0, offsets.length - 1)];
+        int randX = areaMinX + random(0, areaMaxX - areaMinX);
+        int randY = areaMinY + random(0, areaMaxY - areaMinY);
         
-        int newX = currentX + randomOffsetX;
-        int newY = currentY + randomOffsetY;
-        
-        if (isInArea(newX, newY)) {
-            api.walkTo(newX, newY);
-        } else {
-            int centerX = (areaMinX + areaMaxX) / 2;
-            int centerY = (areaMinY + areaMaxY) / 2;
-            int randX = areaMinX + random(0, areaMaxX - areaMinX);
-            int randY = areaMinY + random(0, areaMaxY - areaMinY);
-            api.walkTo(randX, randY);
-        }
+        api.walkTo(randX, randY);
     }
     
     private void wanderToFindTreesOutsideArea() {
@@ -435,10 +346,7 @@ public class WoodcuttingBot extends Bot {
         if (!api.isBankOpen()) {
             if (hasBankLocation && !isAtBank()) {
                 state = State.WALKING_TO_BANK;
-                boolean walked = api.walkTo(bankX, bankY);
-                if (!walked) {
-                    System.out.println("BOT: Walk failed, using ::bank");
-                }
+                api.walkTo(bankX, bankY);
                 return random(500, 1000);
             }
             
@@ -464,20 +372,6 @@ public class WoodcuttingBot extends Bot {
             return api.isBankOpen();
         }
         return api.distanceTo(bankX, bankY) <= 3;
-    }
-    
-    private int dropLogsAndContinue() {
-        for (int logId : logIds) {
-            int count = api.getInventoryCount(logId);
-            if (count > 0) {
-                for (int i = 0; i < count; i++) {
-                    api.dropItemById(logId);
-                }
-            }
-        }
-        consecutiveBankFailures = 0;
-        state = State.IDLE;
-        return random(500, 1000);
     }
     
     public int getLogsChopped() {
