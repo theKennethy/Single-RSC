@@ -725,6 +725,49 @@ public class BotAPI {
     }
     
     /**
+     * Finds ALL game objects by ID within specified area bounds.
+     * Returns a list of all matching objects.
+     */
+    public java.util.List<GameObject> getAllObjectsInArea(int[] ids, int minX, int maxX, int minY, int maxY) {
+        java.util.List<GameObject> found = new java.util.ArrayList<>();
+        
+        for (GameObject obj : RegionManager.getLocalObjects(getPlayer())) {
+            if (obj == null || obj.isRemoved()) continue;
+            
+            int x = obj.getX();
+            int y = obj.getY();
+            
+            if (x < minX || x > maxX || y < minY || y > maxY) continue;
+            
+            for (int id : ids) {
+                if (obj.getID() == id) {
+                    found.add(obj);
+                    break;
+                }
+            }
+        }
+        
+        for (int x = minX; x <= maxX; x++) {
+            for (int y = minY; y <= maxY; y++) {
+                ActiveTile tile = World.getWorld().getTile(x, y);
+                if (tile == null || !tile.hasGameObject()) continue;
+                
+                GameObject obj = tile.getGameObject();
+                if (obj == null || obj.isRemoved()) continue;
+                
+                for (int id : ids) {
+                    if (obj.getID() == id) {
+                        found.add(obj);
+                        break;
+                    }
+                }
+            }
+        }
+        
+        return found;
+    }
+    
+    /**
      * Finds the nearest game object by ID within specified area bounds.
      * Searches the ENTIRE area to find the closest tree.
      */
@@ -752,8 +795,8 @@ public class BotAPI {
             }
         }
         
-        for (int x = minX; x <= maxX; x += 5) {
-            for (int y = minY; y <= maxY; y += 5) {
+        for (int x = minX; x <= maxX; x++) {
+            for (int y = minY; y <= maxY; y++) {
                 ActiveTile tile = World.getWorld().getTile(x, y);
                 if (tile == null || !tile.hasGameObject()) continue;
                 

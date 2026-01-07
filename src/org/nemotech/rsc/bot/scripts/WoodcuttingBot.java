@@ -182,15 +182,11 @@ public class WoodcuttingBot extends Bot {
         
         int dist = api.distanceTo(tree);
         
-        if (dist > 2) {
+        if (dist > 1) {
             state = State.WALKING_TO_TREE;
             targetTree = tree;
-            boolean walked = api.walkTo(tree.getX(), tree.getY());
-            if (!walked) {
-                state = State.IDLE;
-                return random(200, 400);
-            }
-            return 10;
+            api.walkTo(tree.getX(), tree.getY());
+            return random(500, 800);
         }
         
         state = State.CHOPPING;
