@@ -18,6 +18,8 @@ public class WoodcuttingBot extends Bot {
     private int treesChopped = 0;
     private int emptyTreeSearchCount = 0;
     private int consecutiveBankFailures = 0;
+    private int lastTreeX = 0;
+    private int lastTreeY = 0;
     
     private long lastDebugTime = 0;
     private long stuckTime = 0;
@@ -115,14 +117,25 @@ public class WoodcuttingBot extends Bot {
             targetTree = null;
             emptyTreeSearchCount++;
             
-            if (emptyTreeSearchCount > 5) {
-                gameMessage("No trees found nearby, searching...");
+            if (emptyTreeSearchCount > 10) {
                 emptyTreeSearchCount = 0;
+                gameMessage("Searching nearby area...");
+                int currentX = api.getX();
+                int currentY = api.getY();
+                int[] offsets = { -8, -6, -4, 4, 6, 8 };
+                int randomOffsetX = offsets[random(0, offsets.length - 1)];
+                int randomOffsetY = offsets[random(0, offsets.length - 1)];
+                int newX = currentX + randomOffsetX;
+                int newY = currentY + randomOffsetY;
+                api.walkTo(newX, newY);
+                return random(1000, 2000);
             }
-            return random(500, 1500);
+            return random(800, 1200);
         }
         
         emptyTreeSearchCount = 0;
+        lastTreeX = tree.getX();
+        lastTreeY = tree.getY();
         
         int dist = api.distanceTo(tree);
         
@@ -132,7 +145,7 @@ public class WoodcuttingBot extends Bot {
             boolean walked = api.walkTo(tree.getX(), tree.getY());
             if (!walked) {
                 state = State.IDLE;
-                return random(100, 300);
+                return random(200, 400);
             }
             return 10;
         }
