@@ -211,15 +211,36 @@ public class WoodcuttingBot extends Bot {
     private int bankLogs() {
         if (!api.isBankOpen()) {
             api.openBank();
-            return random(1000, 1500);
+            int waitCount = 0;
+            while (!api.isBankOpen() && waitCount < 20) {
+                waitCount++;
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    break;
+                }
+            }
+            if (!api.isBankOpen()) {
+                gameMessage("@red@Bank failed to open, trying again...");
+                return random(500, 1000);
+            }
+            return random(500, 800);
         }
         
+        int totalDeposited = 0;
         for (int logId : logIds) {
             int count = api.getInventoryCount(logId);
             if (count > 0) {
-                api.depositItem(logId, count);
+                for (int i = 0; i < count; i++) {
+                    api.depositItem(logId, 1);
+                    totalDeposited++;
+                }
                 logsChopped += count;
             }
+        }
+        
+        if (totalDeposited > 0) {
+            gameMessage("Banked " + totalDeposited + " logs.");
         }
         
         api.closeBank();
