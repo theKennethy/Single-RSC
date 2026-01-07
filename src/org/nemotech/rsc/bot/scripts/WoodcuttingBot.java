@@ -100,25 +100,35 @@ public class WoodcuttingBot extends Bot {
     private int emptyTreeSearchCount = 0;
     private int consecutiveBankFailures = 0;
     
+    private long lastDebugTime = 0;
+
     @Override
     public int loop() {
+        // Debug logging every 5 seconds
+        long now = System.currentTimeMillis();
+        if (now - lastDebugTime > 5000) {
+            lastDebugTime = now;
+            System.out.println("BOT DEBUG: busy=" + api.isBusy() + " moving=" + api.isMoving() + 
+                " state=" + state + " invFull=" + api.isInventoryFull() + " bankOpen=" + api.isBankOpen());
+        }
+
         // Don't do anything if busy (chopping, walking, etc)
         if (api.isBusy()) {
             return 10;
         }
-        
+
         // If we're walking, wait until we stop
         if (api.isMoving()) {
             return 10;
         }
-        
+
         // If we're chopping, check if we should continue or find a new tree
         if (state == State.CHOPPING) {
             state = State.IDLE;
             targetTree = null;
             return chopTree();
         }
-        
+
         // Handle banking logs when inventory is full
         if (api.isInventoryFull()) {
             state = State.BANKING;
