@@ -239,8 +239,8 @@ public class BotCommands extends Plugin implements CommandListener {
         player.getSender().sendMessage("@whi@::bot pause - Pause/resume active bot");
         player.getSender().sendMessage("@whi@::bot status - Show bot status");
         player.getSender().sendMessage("@cya@=== Bot Settings ===");
-        player.getSender().sendMessage("@whi@::botwand on/off - Enable/disable wandering");
-        player.getSender().sendMessage("@whi@::botarea <minX> <maxX> <minY> <maxY> - Set area bounds");
+        player.getSender().sendMessage("@whi@::botwand on/off - Enable/disable searching outside area bounds");
+        player.getSender().sendMessage("@whi@::botarea <location> - Set area (seers, varrock, falador, etc)");
         player.getSender().sendMessage("@cya@=== Quick Start (Gathering) ===");
         player.getSender().sendMessage("@whi@::woodcut, ::fish, ::mine - Gathering skills");
         player.getSender().sendMessage("@cya@=== Quick Start (Combat) ===");

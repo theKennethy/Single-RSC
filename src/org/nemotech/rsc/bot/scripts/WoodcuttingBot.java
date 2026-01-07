@@ -313,8 +313,8 @@ public class WoodcuttingBot extends Bot {
             if (emptyTreeSearchCount > 2) {
                 emptyTreeSearchCount = 0;
                 if (wanderEnabled) {
-                    gameMessage("No trees found nearby, wandering to find more...");
-                    wanderToFindTrees();
+                    gameMessage("No trees found, searching outside area bounds...");
+                    wanderToFindTreesOutsideArea();
                 } else {
                     gameMessage("Searching for trees in area...");
                     wanderToFindTrees();
@@ -396,6 +396,20 @@ public class WoodcuttingBot extends Bot {
             int randY = areaMinY + random(0, areaMaxY - areaMinY);
             api.walkTo(randX, randY);
         }
+    }
+    
+    private void wanderToFindTreesOutsideArea() {
+        int currentX = api.getX();
+        int currentY = api.getY();
+        
+        int[] offsets = { -50, -40, -30, 30, 40, 50 };
+        int randomOffsetX = offsets[random(0, offsets.length - 1)];
+        int randomOffsetY = offsets[random(0, offsets.length - 1)];
+        
+        int newX = currentX + randomOffsetX;
+        int newY = currentY + randomOffsetY;
+        
+        api.walkTo(newX, newY);
     }
     
     private int bankLogs() {
