@@ -301,35 +301,26 @@ public class WoodcuttingBot extends Bot {
                 System.out.println("BOT: Walking to bank at (" + bankX + ", " + bankY + ")");
                 boolean walked = api.walkTo(bankX, bankY);
                 if (!walked) {
-                    System.out.println("BOT: Failed to walk to bank, trying nearest banker");
-                    state = State.BANKING;
+                    System.out.println("BOT: Failed to walk to bank, using ::bank command");
                 }
                 return random(500, 1000);
             }
             
             NPC banker = findNearestBanker();
-            if (banker != null && api.distanceTo(banker) <= 8) {
+            if (banker != null && api.distanceTo(banker) <= 20) {
                 api.talkToNpc(banker);
-                consecutiveBankFailures++;
-                if (consecutiveBankFailures > 5) {
-                    gameMessage("@red@Bank interaction failed, dropping logs...");
-                    return dropLogsAndContinue();
-                }
-                return random(1500, 2500);
-            }
-            
-            if (!hasBankLocation && banker == null) {
-                gameMessage("@red@No bank or banker found! Dropping logs...");
-                return dropLogsAndContinue();
+                consecutiveBankFailures = 0;
+                return random(1000, 1500);
             }
             
             api.openBank();
             consecutiveBankFailures++;
-            if (consecutiveBankFailures > 5) {
-                gameMessage("@red@Bank command failed, dropping logs...");
-                return dropLogsAndContinue();
+            if (consecutiveBankFailures > 3) {
+                gameMessage("@red@Bank open failed, using ::bank command...");
+                api.sendMessage("::bank");
+                consecutiveBankFailures = 0;
             }
-            return random(1500, 2500);
+            return random(1000, 1500);
         }
         
         for (int logId : logIds) {
