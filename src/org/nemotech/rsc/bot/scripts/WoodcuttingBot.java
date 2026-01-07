@@ -316,10 +316,11 @@ public class WoodcuttingBot extends Bot {
                     gameMessage("No trees found nearby, wandering to find more...");
                     wanderToFindTrees();
                 } else {
-                    gameMessage("No trees found nearby in area. Enable wander to search wider areas.");
+                    gameMessage("Searching for trees in area...");
+                    wanderToFindTrees();
                 }
+                return random(500, 1000);
             }
-            return random(500, 1500);
         }
         
         emptyTreeSearchCount = 0;
