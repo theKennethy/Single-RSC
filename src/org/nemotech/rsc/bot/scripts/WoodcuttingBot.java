@@ -325,6 +325,25 @@ public class WoodcuttingBot extends Bot {
         
         emptyTreeSearchCount = 0;
         
+        if (tree == null || tree.isRemoved()) {
+            state = State.IDLE;
+            targetTree = null;
+            emptyTreeSearchCount++;
+            
+            if (emptyTreeSearchCount > 2) {
+                emptyTreeSearchCount = 0;
+                if (wanderEnabled) {
+                    gameMessage("No trees found, searching outside area bounds...");
+                    wanderToFindTreesOutsideArea();
+                } else {
+                    gameMessage("Searching for trees in area...");
+                    wanderToFindTrees();
+                }
+                return random(500, 1000);
+            }
+            return random(500, 1500);
+        }
+        
         if (targetTree != null && targetTree.equals(tree) && tree.isRemoved()) {
             state = State.IDLE;
             targetTree = null;
