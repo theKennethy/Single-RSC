@@ -41,7 +41,7 @@ public class BotCommands extends Plugin implements CommandListener {
     
     public String[] getCommands() {
         return new String[] { 
-            "bot", "botwand", "botarea", "woodcut", "wc", "fish", "combat", "fight", 
+            "bot", "woodcut", "wc", "fish", "combat", "fight", 
             "mine", "mining", "agility", "agil", "cook", "cooking",
             "firemaking", "fm", "thieve", "thieving", "pickpocket",
             "prayer", "pray", "ranged", "range", "magic", "mage",
@@ -57,18 +57,6 @@ public class BotCommands extends Plugin implements CommandListener {
         // Main bot command
         if (command.equals("bot")) {
             handleBotCommand(args, player);
-            return;
-        }
-        
-        // Bot wander toggle command
-        if (command.equals("botwand")) {
-            handleBotWandCommand(args, player);
-            return;
-        }
-        
-        // Bot area bounds command
-        if (command.equals("botarea")) {
-            handleBotAreaCommand(args, player);
             return;
         }
         
@@ -238,9 +226,6 @@ public class BotCommands extends Plugin implements CommandListener {
         player.getSender().sendMessage("@whi@::bot start/stop <name> - Start/stop a bot");
         player.getSender().sendMessage("@whi@::bot pause - Pause/resume active bot");
         player.getSender().sendMessage("@whi@::bot status - Show bot status");
-        player.getSender().sendMessage("@cya@=== Bot Settings ===");
-        player.getSender().sendMessage("@whi@::botwand on/off - Enable/disable searching outside area bounds");
-        player.getSender().sendMessage("@whi@::botarea <location> - Set area (seers, varrock, falador, etc)");
         player.getSender().sendMessage("@cya@=== Quick Start (Gathering) ===");
         player.getSender().sendMessage("@whi@::woodcut, ::fish, ::mine - Gathering skills");
         player.getSender().sendMessage("@cya@=== Quick Start (Combat) ===");
@@ -250,111 +235,6 @@ public class BotCommands extends Plugin implements CommandListener {
         player.getSender().sendMessage("@whi@::cook, ::fm, ::smith, ::fletch");
         player.getSender().sendMessage("@whi@::craft, ::herblaw");
         player.getSender().sendMessage("@whi@::stopbot - Stop all bots");
-    }
-    
-    private void handleBotWandCommand(String[] args, Player player) {
-        BotManager manager = BotManager.getInstance();
-        Bot active = manager.getActiveBot();
-        
-        if (active == null) {
-            player.getSender().sendMessage("@cya@[Bot] @red@No active bot running.");
-            return;
-        }
-        
-        if (active instanceof WoodcuttingBot) {
-            WoodcuttingBot woodbot = (WoodcuttingBot) active;
-            
-            if (args.length == 0) {
-                boolean current = woodbot.isWanderEnabled();
-                player.getSender().sendMessage("@cya@[Bot] @whi@Wander is currently: " + (current ? "@gre@ON" : "@red@OFF"));
-                player.getSender().sendMessage("@whi@Use ::botwand on or ::botwand off to toggle.");
-                return;
-            }
-            
-            String setting = args[0].toLowerCase();
-            if (setting.equals("on") || setting.equals("true") || setting.equals("yes")) {
-                woodbot.setWanderEnabled(true);
-                player.getSender().sendMessage("@cya@[Bot] @gre@Wander enabled - bot will search wider areas.");
-            } else if (setting.equals("off") || setting.equals("false") || setting.equals("no")) {
-                woodbot.setWanderEnabled(false);
-                player.getSender().sendMessage("@cya@[Bot] @red@Wander disabled - bot will stay in current area.");
-            } else {
-                player.getSender().sendMessage("@cya@[Bot] @whi@Usage: ::botwand on | off");
-            }
-        } else {
-            player.getSender().sendMessage("@cya@[Bot] @red@This command only works with Woodcutting bot.");
-        }
-    }
-    
-    private void handleBotAreaCommand(String[] args, Player player) {
-        BotManager manager = BotManager.getInstance();
-        Bot active = manager.getActiveBot();
-        
-        if (active == null) {
-            player.getSender().sendMessage("@cya@[Bot] @red@No active bot running.");
-            return;
-        }
-        
-        if (active instanceof WoodcuttingBot) {
-            WoodcuttingBot woodbot = (WoodcuttingBot) active;
-            
-            if (args.length == 0) {
-                player.getSender().sendMessage("@cya@[Bot] @whi@Usage: ::botarea <location>");
-                player.getSender().sendMessage("@whi@Locations: varrock, falador, draynor, portsarim, karamja, alkharid, lumbridge, edgeville, taverly, seers, barbarian, rimmington, catherby, ardougne, yanille, lostcity, gnome, tutorial");
-                player.getSender().sendMessage("@whi@Or use coords: ::botarea <minX> <maxX> <minY> <maxY>");
-                player.getSender().sendMessage("@whi@Use ::botarea clear to remove bounds");
-                if (woodbot.areaMinX != null) {
-                    player.getSender().sendMessage("@whi@Current area: " + woodbot.areaMinX + "-" + woodbot.areaMaxX + ", " + woodbot.areaMinY + "-" + woodbot.areaMaxY);
-                } else {
-                    player.getSender().sendMessage("@whi@Current area: Unbounded (whole map)");
-                }
-                return;
-            }
-            
-            if (args[0].equalsIgnoreCase("clear")) {
-                woodbot.clearAreaBounds();
-                player.getSender().sendMessage("@cya@[Bot] @red@Area bounds cleared - bot can go anywhere.");
-                return;
-            }
-            
-            if (args.length == 1) {
-                String loc = args[0].toLowerCase();
-                String[] validLocs = {"varrock", "falador", "draynor", "portsarim", "karamja", "alkharid", "lumbridge", "edgeville", "taverly", "seers", "seersvillage", "barbarian", "rimmington", "catherby", "ardougne", "yanille", "lostcity", "gnome", "tutorial"};
-                boolean valid = false;
-                for (String l : validLocs) {
-                    if (l.equals(loc)) {
-                        valid = true;
-                        break;
-                    }
-                }
-                if (valid) {
-                    woodbot.setAreaByLocation(loc);
-                    player.getSender().sendMessage("@cya@[Bot] @gre@Area set to: " + loc.toUpperCase());
-                    player.getSender().sendMessage("@cya@[Bot] @whi@Bounds: " + woodbot.areaMinX + "-" + woodbot.areaMaxX + ", " + woodbot.areaMinY + "-" + woodbot.areaMaxY);
-                    return;
-                }
-            }
-            
-            if (args.length < 4) {
-                player.getSender().sendMessage("@cya@[Bot] @red@Invalid location. Use ::botarea <location> or ::botarea <minX> <maxX> <minY> <maxY>");
-                return;
-            }
-            
-            try {
-                int minX = Integer.parseInt(args[0]);
-                int maxX = Integer.parseInt(args[1]);
-                int minY = Integer.parseInt(args[2]);
-                int maxY = Integer.parseInt(args[3]);
-                
-                woodbot.setAreaBounds(minX, maxX, minY, maxY);
-                player.getSender().sendMessage("@cya@[Bot] @gre@Area set to: " + minX + "-" + maxX + ", " + minY + "-" + maxY);
-                player.getSender().sendMessage("@cya@[Bot] @whi@Bot will stay within these coordinates.");
-            } catch (NumberFormatException e) {
-                player.getSender().sendMessage("@cya@[Bot] @red@Invalid coordinates. Use numbers.");
-            }
-        } else {
-            player.getSender().sendMessage("@cya@[Bot] @red@This command only works with Woodcutting bot.");
-        }
     }
     
     private void listBots(Player player) {
