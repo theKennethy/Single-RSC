@@ -9,25 +9,19 @@ public class WoodcuttingBot extends Bot {
     private int[] logIds = { 14 };
     
     private enum State {
-        IDLE, WALKING_TO_TREE, CHOPPING, BANKING
+        CHOPPING, WALKING, BANKING
     }
     
-    private State state = State.IDLE;
+    private State state = State.CHOPPING;
     private GameObject targetTree = null;
     private int logsChopped = 0;
     private int treesChopped = 0;
     private int emptyTreeSearchCount = 0;
-    private int consecutiveBankFailures = 0;
-    private int lastTreeX = 0;
-    private int lastTreeY = 0;
     
     public Integer areaMinX = null;
     public Integer areaMaxX = null;
     public Integer areaMinY = null;
     public Integer areaMaxY = null;
-    
-    private long lastDebugTime = 0;
-    private long stuckTime = 0;
 
     public WoodcuttingBot() {
         super("Woodcutting Bot");
@@ -72,7 +66,7 @@ public class WoodcuttingBot extends Bot {
     public void onStart() {
         super.onStart();
         logsChopped = 0;
-        state = State.IDLE;
+        state = State.CHOPPING;
         gameMessage("Woodcutting bot started!");
     }
     
@@ -87,69 +81,21 @@ public class WoodcuttingBot extends Bot {
     
     @Override
     public int loop() {
-        boolean busy = api.isBusy();
-        boolean moving = api.isMoving();
-        int invCount = api.getInventorySize();
-        int maxInv = 30;
-        boolean invFull = invCount >= maxInv;
-        boolean bankOpen = api.isBankOpen();
-
-        long now = System.currentTimeMillis();
-        if (now - lastDebugTime > 3000) {
-            lastDebugTime = now;
-            System.out.println("BOT: state=" + state + " busy=" + busy + " moving=" + moving + 
-                " inv=" + invCount + "/" + maxInv + " bank=" + bankOpen);
+        if (api.isBusy() || api.isMoving()) {
+            return 50;
         }
-
-        if (busy || moving) {
-            if (stuckTime == 0) {
-                stuckTime = now;
-            } else if (now - stuckTime > 30000) {
-                System.out.println("BOT: Recovering from stuck state");
-                stuckTime = 0;
-                state = State.IDLE;
-                return 10;
-            }
-            return 10;
-        }
-        stuckTime = 0;
-
-        if (invFull) {
-            System.out.println("BOT: Inventory full (" + invCount + "/" + maxInv + "), going to bank");
+        
+        if (api.isInventoryFull()) {
             state = State.BANKING;
-            targetTree = null;
             return bankLogs();
         }
         
-        if (bankOpen) {
-            System.out.println("BOT: Closing bank");
-            api.closeBank();
-            return 10;
-        }
-        
-        if (state == State.CHOPPING) {
-            if (api.isInventoryFull()) {
-                state = State.IDLE;
-                targetTree = null;
-                return 10;
+        if (state == State.BANKING) {
+            if (api.isBankOpen()) {
+                api.closeBank();
             }
-            
-            if (targetTree == null || targetTree.isRemoved()) {
-                state = State.IDLE;
-                targetTree = null;
-                return random(200, 400);
-            }
-            
-            int dist = api.distanceTo(targetTree);
-            if (dist > 1) {
-                state = State.IDLE;
-                targetTree = null;
-                return random(200, 400);
-            }
-            
-            api.interactObject(targetTree);
-            treesChopped++;
-            return 1000;
+            state = State.CHOPPING;
+            return 100;
         }
         
         return chopTree();
@@ -164,9 +110,8 @@ public class WoodcuttingBot extends Bot {
         }
         
         if (tree == null || tree.isRemoved()) {
-            state = State.IDLE;
-            targetTree = null;
             emptyTreeSearchCount++;
+            targetTree = null;
             
             if (emptyTreeSearchCount > 10) {
                 emptyTreeSearchCount = 0;
@@ -180,20 +125,18 @@ public class WoodcuttingBot extends Bot {
                 
                 if (isInArea(newX, newY)) {
                     api.walkTo(newX, newY);
-                } else {
+                } else if (areaMinX != null) {
                     int centerX = (areaMinX + areaMaxX) / 2;
                     int centerY = (areaMinY + areaMaxY) / 2;
                     api.walkTo(centerX, centerY);
                 }
-                return random(1000, 2000);
             }
-            return random(800, 1200);
+            return random(200, 400);
         }
         
         emptyTreeSearchCount = 0;
         
         if (!isInArea(tree.getX(), tree.getY())) {
-            state = State.IDLE;
             targetTree = null;
             return random(200, 400);
         }
@@ -201,10 +144,10 @@ public class WoodcuttingBot extends Bot {
         int dist = api.distanceTo(tree);
         
         if (dist > 1) {
-            state = State.WALKING_TO_TREE;
+            state = State.WALKING;
             targetTree = tree;
             api.walkTo(tree.getX(), tree.getY());
-            return random(600, 1000);
+            return random(300, 500);
         }
         
         state = State.CHOPPING;
@@ -212,16 +155,13 @@ public class WoodcuttingBot extends Bot {
         api.interactObject(tree);
         treesChopped++;
         
-        return 500;
+        return 800;
     }
     
     private int bankLogs() {
         if (!api.isBankOpen()) {
             api.openBank();
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {}
-            return 100;
+            return random(300, 500);
         }
         
         int totalDeposited = 0;
@@ -232,9 +172,6 @@ public class WoodcuttingBot extends Bot {
                 for (int i = 0; i < count; i++) {
                     api.depositItem(logId, 1);
                     totalDeposited++;
-                    try {
-                        Thread.sleep(20);
-                    } catch (InterruptedException e) {}
                 }
             }
         }
@@ -244,8 +181,7 @@ public class WoodcuttingBot extends Bot {
         }
         
         api.closeBank();
-        state = State.IDLE;
-        return 10;
+        return 100;
     }
     
     public int getLogsChopped() {
