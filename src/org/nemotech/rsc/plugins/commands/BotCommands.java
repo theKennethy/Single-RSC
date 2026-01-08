@@ -312,10 +312,11 @@ public class BotCommands extends Plugin implements CommandListener {
             case "lumbridge": woodbot.setAreaBounds(100, 160, 620, 680); break;
             case "edgeville": woodbot.setAreaBounds(190, 250, 420, 480); break;
             case "taverly": woodbot.setAreaBounds(350, 400, 470, 530); break;
-            case "seers": case "seersvillage": woodbot.setAreaBounds(370, 470, 530, 680); break;
+            case "seers": case "seersvillage": woodbot.setAreaBounds(370, 520, 530, 680); break;
             case "barbarian": woodbot.setAreaBounds(210, 260, 490, 540); break;
             case "rimmington": woodbot.setAreaBounds(300, 350, 640, 690); break;
             case "catherby": woodbot.setAreaBounds(420, 470, 480, 530); break;
+            case "camelot": woodbot.setAreaBounds(480, 560, 330, 430); break;
             case "ardougne": woodbot.setAreaBounds(520, 580, 560, 620); break;
             case "yanille": woodbot.setAreaBounds(560, 620, 720, 780); break;
             case "lostcity": woodbot.setAreaBounds(100, 160, 3490, 3550); break;

@@ -6,7 +6,7 @@ import org.nemotech.rsc.model.GameObject;
 public class WoodcuttingBot extends Bot {
     
     private int[] treeIds = { 0, 1, 70 };
-    private int[] logIds = { 14 };
+    private int[] logIds = { 14, 632, 633, 634, 635, 636 };
     
     private enum State {
         CHOPPING, WALKING, BANKING
@@ -84,27 +84,18 @@ public class WoodcuttingBot extends Bot {
         if (api.isBusy() || api.isMoving()) {
             return 50;
         }
-        
+
         if (api.isInventoryFull()) {
-            state = State.BANKING;
             return bankLogs();
         }
-        
-        if (state == State.BANKING) {
-            if (api.isBankOpen()) {
-                api.closeBank();
-            }
-            state = State.CHOPPING;
-            return 100;
-        }
-        
+
         return chopTree();
     }
     
     private int chopTree() {
         GameObject tree;
         if (areaMinX != null && areaMaxX != null && areaMinY != null && areaMaxY != null) {
-            tree = api.getNearestObjectInArea(treeIds, areaMinX, areaMaxX, areaMinY, areaMaxY);
+            tree = api.getNearestObjectInArea(treeIds, areaMinX.intValue(), areaMaxX.intValue(), areaMinY.intValue(), areaMaxY.intValue());
         } else {
             tree = api.getNearestObject(treeIds);
         }
@@ -161,31 +152,25 @@ public class WoodcuttingBot extends Bot {
     private int bankLogs() {
         if (!api.isBankOpen()) {
             api.openBank();
-            return random(300, 500);
+            return random(800, 1200);
         }
-        
-        int totalDeposited = 0;
-        int totalItems = api.getInventorySize();
-        int depositedThisRound = 0;
-        
-        do {
-            depositedThisRound = 0;
-            for (int logId : logIds) {
-                int count = api.getInventoryCount(logId);
-                if (count > 0) {
-                    api.depositItem(logId, count);
-                    totalDeposited += count;
-                    depositedThisRound += count;
-                }
+
+        int deposited = 0;
+        for (int logId : logIds) {
+            int count = api.getInventoryCount(logId);
+            if (count > 0) {
+                api.depositItem(logId, count);
+                deposited += count;
+                logsChopped += count;
             }
-        } while (depositedThisRound > 0 && totalDeposited < totalItems);
-        
-        if (totalDeposited > 0) {
-            gameMessage("Banked " + totalDeposited + " logs.");
         }
-        
+
+        if (deposited > 0) {
+            gameMessage("Banked " + deposited + " logs. Total: " + logsChopped);
+        }
+
         api.closeBank();
-        return 100;
+        return random(300, 500);
     }
     
     public int getLogsChopped() {
