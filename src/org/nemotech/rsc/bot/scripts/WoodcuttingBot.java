@@ -9,7 +9,7 @@ public class WoodcuttingBot extends Bot {
     private int[] logIds = { 14, 632, 633, 634, 635, 636 };
 
     private enum State {
-        CHOPPING, WALKING, BANKING, WAITING_RESPAWN
+        CHOPPING, WALKING, BANKING
     }
 
     private State state = State.CHOPPING;
@@ -22,7 +22,6 @@ public class WoodcuttingBot extends Bot {
 
     private int roundX = 0;
     private int roundY = 0;
-    private long respawnStartTime = 0;
     private long lastSearchTime = 0;
 
     public Integer areaMinX = null;
@@ -36,7 +35,6 @@ public class WoodcuttingBot extends Bot {
     private static final int SEERS_MAPLE_MAX_Y = 480;
     private static final int SEERS_VILLAGE_BANK_X = 490;
     private static final int SEERS_VILLAGE_BANK_Y = 470;
-    private static final int RESPAWN_WAIT_TIME = 5000;
 
     public WoodcuttingBot() {
         super("Woodcutting Bot");
@@ -111,15 +109,6 @@ public class WoodcuttingBot extends Bot {
             return 50;
         }
 
-        if (state == State.WAITING_RESPAWN) {
-            long timeWaiting = System.currentTimeMillis() - respawnStartTime;
-            if (timeWaiting < RESPAWN_WAIT_TIME) {
-                return 500;
-            }
-            state = State.CHOPPING;
-            targetTree = null;
-        }
-
         if (api.isInventoryFull() || bankDepositedCount > 0 || bankCurrentLogIndex > 0) {
             return bankLogs();
         }
@@ -131,12 +120,6 @@ public class WoodcuttingBot extends Bot {
         GameObject tree = findTreeInArea();
 
         if (tree == null || tree.isRemoved()) {
-            if (targetTree != null && !targetTree.isRemoved()) {
-                state = State.WAITING_RESPAWN;
-                respawnStartTime = System.currentTimeMillis();
-                targetTree = null;
-                return 500;
-            }
             targetTree = null;
             return searchForTree();
         }
@@ -166,8 +149,8 @@ public class WoodcuttingBot extends Bot {
 
     private int searchForTree() {
         long now = System.currentTimeMillis();
-        if (now - lastSearchTime < 1000) {
-            return 100;
+        if (now - lastSearchTime < 100) {
+            return 50;
         }
         lastSearchTime = now;
         
@@ -179,7 +162,7 @@ public class WoodcuttingBot extends Bot {
             api.walkTo(areaMinX, areaMinY);
             roundX = 0;
             roundY = 0;
-            return random(1500, 2000);
+            return random(500, 800);
         }
 
         int width = areaMaxX - areaMinX;
@@ -202,7 +185,7 @@ public class WoodcuttingBot extends Bot {
             }
         }
 
-        return random(1000, 1500);
+        return random(500, 800);
     }
 
     private GameObject findTreeInArea() {
@@ -219,12 +202,12 @@ public class WoodcuttingBot extends Bot {
         if (currentX < SEERS_VILLAGE_BANK_X - 15 || currentX > SEERS_VILLAGE_BANK_X + 15 ||
             currentY < SEERS_VILLAGE_BANK_Y - 15 || currentY > SEERS_VILLAGE_BANK_Y + 15) {
             api.walkTo(SEERS_VILLAGE_BANK_X, SEERS_VILLAGE_BANK_Y);
-            return random(1500, 2000);
+            return random(500, 800);
         }
 
         if (!api.isBankOpen()) {
             api.openBank();
-            return random(500, 800);
+            return random(200, 400);
         }
 
         for (int id : logIds) {
