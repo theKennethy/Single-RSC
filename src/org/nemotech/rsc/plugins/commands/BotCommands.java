@@ -367,14 +367,15 @@ public class BotCommands extends Plugin implements CommandListener {
         manager.stopAll();
         
         String type = args.length > 0 ? args[0].toLowerCase() : "normal";
+        String location = args.length > 1 ? args[1].toLowerCase() : "seers";
         
-        player.getSender().sendMessage("@yel@[Debug] Parsed tree type: '" + type + "'");
+        player.getSender().sendMessage("@yel@[Debug] Tree type: '" + type + "', Location: '" + location + "'");
         
-        WoodcuttingBot bot = new WoodcuttingBot(type);
+        WoodcuttingBot bot = new WoodcuttingBot(type, location);
         manager.register(bot);
         manager.startBot(bot.getName());
         
-        player.getSender().sendMessage("@cya@[Bot] @gre@Started " + type + " woodcutting bot!");
+        player.getSender().sendMessage("@cya@[Bot] @gre@Started " + type + " woodcutting at " + location + "!");
     }
     
     private void startFishing(String[] args, Player player) {
