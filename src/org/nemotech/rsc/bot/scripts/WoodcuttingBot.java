@@ -5,8 +5,9 @@ import org.nemotech.rsc.model.GameObject;
 
 public class WoodcuttingBot extends Bot {
 
-    private int[] treeIds = { 0, 1, 70, 306, 307, 308, 309, 310 };
-    private int[] logIds = { 14, 632, 633, 634, 635, 636 };
+    private int[] treeIds;
+    private int[] logIds;
+    private String treeType;
 
     private enum State {
         CHOPPING, WALKING, BANKING
@@ -23,49 +24,108 @@ public class WoodcuttingBot extends Bot {
     private int treeIndex = 0;
     private long lastSearchTime = 0;
 
-    private static final int[][] SEERS_TREES = {
-        {522, 458},
-        {525, 455},
-        {520, 452},
-        {530, 450},
-        {535, 455},
-        {540, 458},
-        {538, 462},
-        {532, 465},
-        {526, 468},
-        {520, 465},
-        {515, 460},
-        {510, 455},
-        {505, 450},
-        {500, 445},
-        {495, 450},
-        {490, 455},
-        {485, 460},
-        {490, 465},
-        {495, 470},
-        {500, 475}
-    };
-
     public Integer areaMinX = null;
     public Integer areaMaxX = null;
     public Integer areaMinY = null;
     public Integer areaMaxY = null;
 
-    private static final int SEERS_MAPLE_MIN_X = 480;
-    private static final int SEERS_MAPLE_MAX_X = 550;
-    private static final int SEERS_MAPLE_MIN_Y = 420;
-    private static final int SEERS_MAPLE_MAX_Y = 480;
+    private int[][] treeLocations;
+
+    private static final int[][] NORMAL_TREES = {
+        {522, 458}, {525, 455}, {520, 452}, {530, 450}, {535, 455},
+        {540, 458}, {538, 462}, {532, 465}, {526, 468}, {520, 465},
+        {515, 460}, {510, 455}, {505, 450}, {500, 445}, {495, 450},
+        {490, 455}, {485, 460}, {490, 465}, {495, 470}, {500, 475}
+    };
+
+    private static final int[][] OAK_TREES = {
+        {480, 450}, {485, 455}, {490, 450}, {495, 455}, {500, 450},
+        {505, 455}, {510, 450}, {515, 455}, {520, 450}, {525, 455}
+    };
+
+    private static final int[][] WILLOW_TREES = {
+        {520, 460}, {525, 465}, {530, 460}, {535, 465}, {540, 460},
+        {545, 465}, {550, 460}, {555, 465}, {560, 460}, {565, 465}
+    };
+
+    private static final int[][] MAPLE_TREES = {
+        {522, 458}, {525, 455}, {520, 452}, {530, 450}, {535, 455},
+        {540, 458}, {538, 462}, {532, 465}, {526, 468}, {520, 465},
+        {515, 460}, {510, 455}, {505, 450}, {500, 445}, {495, 450},
+        {490, 455}, {485, 460}, {490, 465}, {495, 470}, {500, 475}
+    };
+
+    private static final int[][] YEW_TREES = {
+        {580, 550}, {585, 555}, {590, 550}, {595, 555}, {600, 550},
+        {605, 555}, {610, 550}, {615, 555}, {620, 550}, {625, 555}
+    };
+
+    private static final int[][] MAGIC_TREES = {
+        {650, 600}, {655, 605}, {660, 600}, {665, 605}, {670, 600},
+        {675, 605}, {680, 600}, {685, 605}, {690, 600}, {695, 605}
+    };
+
     private static final int SEERS_VILLAGE_BANK_X = 490;
     private static final int SEERS_VILLAGE_BANK_Y = 470;
 
     public WoodcuttingBot() {
         super("Woodcutting Bot");
+        this.treeType = "normal";
+        this.treeIds = new int[] { 0, 1, 70 };
+        this.logIds = new int[] { 14 };
+        this.treeLocations = NORMAL_TREES;
+    }
+    
+    public WoodcuttingBot(String treeType) {
+        super("Woodcutting Bot");
+        this.treeType = treeType;
+        setTreeType(treeType);
     }
     
     public WoodcuttingBot(int[] treeIds, int[] logIds) {
         super("Woodcutting Bot");
+        this.treeType = "normal";
         this.treeIds = treeIds;
         this.logIds = logIds;
+        this.treeLocations = NORMAL_TREES;
+    }
+    
+    private void setTreeType(String type) {
+        switch (type.toLowerCase()) {
+            case "oak":
+                treeIds = new int[] { 306 };
+                logIds = new int[] { 632 };
+                treeLocations = OAK_TREES;
+                break;
+            case "willow":
+                treeIds = new int[] { 307 };
+                logIds = new int[] { 633 };
+                treeLocations = WILLOW_TREES;
+                break;
+            case "maple":
+                treeIds = new int[] { 308 };
+                logIds = new int[] { 634 };
+                treeLocations = MAPLE_TREES;
+                break;
+            case "yew":
+                treeIds = new int[] { 309 };
+                logIds = new int[] { 635 };
+                treeLocations = YEW_TREES;
+                break;
+            case "magic":
+                treeIds = new int[] { 310 };
+                logIds = new int[] { 636 };
+                treeLocations = MAGIC_TREES;
+                break;
+            case "normal":
+            default:
+                treeIds = new int[] { 0, 1, 70 };
+                logIds = new int[] { 14 };
+                treeLocations = NORMAL_TREES;
+                type = "normal";
+                break;
+        }
+        this.treeType = type;
     }
     
     public void setTreeIds(int... ids) {
@@ -90,13 +150,6 @@ public class WoodcuttingBot extends Bot {
         this.areaMaxY = null;
     }
     
-    public boolean isInArea(int x, int y) {
-        if (areaMinX == null || areaMaxX == null || areaMinY == null || areaMaxY == null) {
-            return true;
-        }
-        return x >= areaMinX && x <= areaMaxX && y >= areaMinY && y <= areaMaxY;
-    }
-    
     @Override
     public void onStart() {
         super.onStart();
@@ -104,15 +157,7 @@ public class WoodcuttingBot extends Bot {
         treesChopped = 0;
         treeIndex = 0;
         state = State.CHOPPING;
-        if (areaMinX == null) {
-            areaMinX = SEERS_MAPLE_MIN_X;
-            areaMaxX = SEERS_MAPLE_MAX_X;
-            areaMinY = SEERS_MAPLE_MIN_Y;
-            areaMaxY = SEERS_MAPLE_MAX_Y;
-            gameMessage("Woodcutting bot started! Fixed tree order for Seers Village.");
-        } else {
-            gameMessage("Woodcutting bot started! Area: " + areaMinX + "-" + areaMaxX + ", " + areaMinY + "-" + areaMaxY);
-        }
+        gameMessage("Woodcutting bot started! " + treeType + " trees - fixed pattern.");
     }
     
     @Override
@@ -138,12 +183,12 @@ public class WoodcuttingBot extends Bot {
     }
     
     private int chopTree() {
-        if (treeIndex >= SEERS_TREES.length) {
+        if (treeIndex >= treeLocations.length) {
             treeIndex = 0;
         }
 
-        int targetX = SEERS_TREES[treeIndex][0];
-        int targetY = SEERS_TREES[treeIndex][1];
+        int targetX = treeLocations[treeIndex][0];
+        int targetY = treeLocations[treeIndex][1];
 
         GameObject tree = findTreeAtLocation(targetX, targetY);
 
@@ -165,7 +210,6 @@ public class WoodcuttingBot extends Bot {
         targetTree = tree;
         api.interactObject(tree);
         treesChopped++;
-        gameMessage("Chopping tree at " + targetX + ", " + targetY);
 
         treeIndex++;
         return random(100, 200);
@@ -182,12 +226,12 @@ public class WoodcuttingBot extends Bot {
         }
         lastSearchTime = now;
         
-        if (treeIndex >= SEERS_TREES.length) {
+        if (treeIndex >= treeLocations.length) {
             treeIndex = 0;
         }
 
-        int targetX = SEERS_TREES[treeIndex][0];
-        int targetY = SEERS_TREES[treeIndex][1];
+        int targetX = treeLocations[treeIndex][0];
+        int targetY = treeLocations[treeIndex][1];
 
         api.walkTo(targetX, targetY);
         return random(300, 500);
@@ -239,5 +283,9 @@ public class WoodcuttingBot extends Bot {
     
     public State getState() {
         return state;
+    }
+    
+    public String getTreeType() {
+        return treeType;
     }
 }
