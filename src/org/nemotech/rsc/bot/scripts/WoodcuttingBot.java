@@ -9,7 +9,7 @@ public class WoodcuttingBot extends Bot {
     private int[] logIds = { 14 };
 
     private enum State {
-        CHOPPING, WALKING, BANKING
+        CHOPPING, WALKING, BANKING, SEARCHING
     }
 
     private State state = State.CHOPPING;
@@ -19,6 +19,9 @@ public class WoodcuttingBot extends Bot {
 
     private int bankDepositedCount = 0;
     private int bankCurrentLogIndex = 0;
+    private int lastSearchX = -1;
+    private int lastSearchY = -1;
+    private long lastSearchTime = 0;
 
     public Integer areaMinX = null;
     public Integer areaMaxX = null;
@@ -26,6 +29,9 @@ public class WoodcuttingBot extends Bot {
     public Integer areaMaxY = null;
 
     private static final int DEFAULT_AREA_SIZE = 200;
+    private static final int SEERS_VILLAGE_X = 500;
+    private static final int SEERS_VILLAGE_Y = 450;
+    private static final int SEARCH_RADIUS = 60;
 
     public WoodcuttingBot() {
         super("Woodcutting Bot");
@@ -95,19 +101,15 @@ public class WoodcuttingBot extends Bot {
             return 50;
         }
 
-        if (api.isInventoryFull() && bankDepositedCount == 0 && bankCurrentLogIndex == 0) {
-            bankDepositedCount = 0;
-            bankCurrentLogIndex = 0;
-            return bankLogs();
+        if (state == State.SEARCHING) {
+            long timeSinceSearch = System.currentTimeMillis() - lastSearchTime;
+            if (timeSinceSearch < 1000) {
+                return 100;
+            }
+            state = State.CHOPPING;
         }
 
-        if (bankDepositedCount > 0 || bankCurrentLogIndex > 0) {
-            return bankLogs();
-        }
-
-        if (api.isInventoryFull()) {
-            bankDepositedCount = 0;
-            bankCurrentLogIndex = 0;
+        if (api.isInventoryFull() || bankDepositedCount > 0 || bankCurrentLogIndex > 0) {
             return bankLogs();
         }
 
@@ -146,25 +148,41 @@ public class WoodcuttingBot extends Bot {
     }
 
     private int searchForTree() {
+        state = State.SEARCHING;
+        lastSearchX = api.getX();
+        lastSearchY = api.getY();
+        lastSearchTime = System.currentTimeMillis();
+
+        int currentX = api.getX();
+        int currentY = api.getY();
+        int distFromSeers = api.distanceTo(SEERS_VILLAGE_X, SEERS_VILLAGE_Y);
+
+        if (distFromSeers > SEARCH_RADIUS) {
+            int walkX = SEERS_VILLAGE_X + random(-20, 20);
+            int walkY = SEERS_VILLAGE_Y + random(-20, 20);
+            api.walkTo(walkX, walkY);
+            return random(1500, 2000);
+        }
+
         if (areaMinX == null || areaMaxX == null || areaMinY == null || areaMaxY == null) {
-            int[] offsets = { -20, -15, -10, 10, 15, 20 };
+            int[] offsets = { -50, -40, -30, -20, 20, 30, 40, 50 };
             int newX = api.getX() + offsets[random(0, offsets.length - 1)];
             int newY = api.getY() + offsets[random(0, offsets.length - 1)];
             api.walkTo(newX, newY);
-            return random(500, 800);
+            return random(1000, 1500);
         }
 
         int newX = areaMinX + random(0, areaMaxX - areaMinX);
         int newY = areaMinY + random(0, areaMaxY - areaMinY);
         api.walkTo(newX, newY);
-        return random(600, 1000);
+        return random(1000, 1500);
     }
 
     private GameObject findTreeInArea() {
         if (areaMinX != null && areaMaxX != null && areaMinY != null && areaMaxY != null) {
             return api.getNearestObjectInArea(treeIds, areaMinX.intValue(), areaMaxX.intValue(), areaMinY.intValue(), areaMaxY.intValue());
         }
-        return api.getNearestObjectInLocalArea(treeIds, 50);
+        return api.getNearestObjectInLocalArea(treeIds, 200);
     }
     private int bankLogs() {
         if (!api.isBankOpen()) {
@@ -174,11 +192,12 @@ public class WoodcuttingBot extends Bot {
 
         for (int id : logIds) {
             int count = api.getInventoryCount(id);
-            while (count > 0) {
+            if (count > 0) {
                 api.depositItem(id, count);
-                count = 0;
-                logsChopped += api.getInventoryCount(id);
-                return random(100, 200);
+                logsChopped += count;
+                gameMessage("Banked " + count + " logs. Total: " + logsChopped);
+                api.closeBank();
+                return random(200, 400);
             }
         }
 
