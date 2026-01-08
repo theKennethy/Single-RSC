@@ -95,13 +95,6 @@ public class WoodcuttingBot extends Bot {
             return 50;
         }
 
-        if (areaMinX != null && !isInArea(api.getX(), api.getY())) {
-            int centerX = (areaMinX + areaMaxX) / 2;
-            int centerY = (areaMinY + areaMaxY) / 2;
-            api.walkTo(centerX, centerY);
-            return random(500, 800);
-        }
-
         if (api.isInventoryFull() && bankDepositedCount == 0 && bankCurrentLogIndex == 0) {
             bankDepositedCount = 0;
             bankCurrentLogIndex = 0;
