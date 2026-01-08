@@ -26,6 +26,8 @@ public class WoodcuttingBot extends Bot {
     private int lastPatrolY = -1;
     private int specialPatrolX = 537;
     private int specialPatrolY = 488;
+    private double patrolAngle = 0;
+    private boolean visitingSpecial = false;
     
     public Integer areaMinX = null;
     public Integer areaMaxX = null;
@@ -167,16 +169,15 @@ public class WoodcuttingBot extends Bot {
         return api.getNearestObjectInLocalArea(treeIds, 25);
     }
     
+
     private int patrolArea() {
         int currentX = api.getX();
         int currentY = api.getY();
         
         if (areaMinX == null || areaMaxX == null || areaMinY == null || areaMaxY == null) {
             int[] offsets = { -10, -8, -6, 6, 8, 10 };
-            int randomOffsetX = offsets[random(0, offsets.length - 1)];
-            int randomOffsetY = offsets[random(0, offsets.length - 1)];
-            int newX = currentX + randomOffsetX;
-            int newY = currentY + randomOffsetY;
+            int newX = currentX + offsets[random(0, offsets.length - 1)];
+            int newY = currentY + offsets[random(0, offsets.length - 1)];
             api.walkTo(newX, newY);
             return random(500, 800);
         }
@@ -191,54 +192,53 @@ public class WoodcuttingBot extends Bot {
             return random(500, 800);
         }
         
-
-        if (random(0, 100) < 10 && (lastPatrolX != specialPatrolX || lastPatrolY != specialPatrolY)) {
+        int centerX = (areaMinX + areaMaxX) / 2;
+        int centerY = (areaMinY + areaMaxY) / 2;
+        
+        if (random(0, 100) < 10 && !visitingSpecial) {
+            visitingSpecial = true;
             api.walkTo(specialPatrolX, specialPatrolY);
             lastPatrolX = specialPatrolX;
             lastPatrolY = specialPatrolY;
             return random(1000, 1500);
         }
-        int attempts = 0;
-        int newX = currentX;
-        int newY = currentY;
-        boolean validSpot = false;
         
-        while (!validSpot && attempts < 10) {
-            attempts++;
-            
-            double randX = Math.random();
-            double randY = Math.random();
-            
-            newX = areaMinX + (int)(randX * areaWidth);
-            newY = areaMinY + (int)(randY * areaHeight);
-            
-            if (newX < areaMinX) newX = areaMinX;
-            if (newX > areaMaxX) newX = areaMaxX;
-            if (newY < areaMinY) newY = areaMinY;
-            if (newY > areaMaxY) newY = areaMaxY;
-            
-            if (lastPatrolX == -1 && lastPatrolY == -1) {
-                validSpot = true;
-            } else {
-                int distFromLast = Math.max(Math.abs(newX - lastPatrolX), Math.abs(newY - lastPatrolY));
-                if (distFromLast > 5) {
-                    validSpot = true;
-                }
-            }
+        if (visitingSpecial && currentX == specialPatrolX && currentY == specialPatrolY) {
+            visitingSpecial = false;
         }
         
-        if (!validSpot) {
-            newX = areaMinX + random(0, areaWidth);
-            newY = areaMinY + random(0, areaHeight);
+        patrolAngle += 1;
+        if (patrolAngle > 8) {
+            patrolAngle = 0;
         }
+        
+        int newX, newY;
+        
+        if (patrolAngle < 2) {
+            newX = currentX + 8;
+            newY = currentY;
+        } else if (patrolAngle < 4) {
+            newX = currentX;
+            newY = currentY + 8;
+        } else if (patrolAngle < 6) {
+            newX = currentX - 8;
+            newY = currentY;
+        } else {
+            newX = currentX;
+            newY = currentY - 8;
+        }
+        
+        if (newX < areaMinX) newX = areaMinX;
+        if (newX > areaMaxX) newX = areaMaxX;
+        if (newY < areaMinY) newY = areaMinY;
+        if (newY > areaMaxY) newY = areaMaxY;
         
         lastPatrolX = newX;
         lastPatrolY = newY;
         
         api.walkTo(newX, newY);
-        return random(800, 1200);
+        return random(600, 1000);
     }
-    
     private int bankLogs() {
         if (!api.isBankOpen()) {
             api.openBank();
