@@ -161,17 +161,21 @@ public class WoodcuttingBot extends Bot {
     private int bankLogs() {
         if (!api.isBankOpen()) {
             api.openBank();
-            return random(300, 500);
+            return 200;
         }
         
         int totalDeposited = 0;
+        int totalItems = api.getInventorySize();
         
-        for (int logId : logIds) {
-            int count = api.getInventoryCount(logId);
-            if (count > 0) {
-                for (int i = 0; i < count; i++) {
+        for (int i = 0; i < totalItems; i++) {
+            for (int logId : logIds) {
+                int count = api.getInventoryCount(logId);
+                if (count > 0) {
                     api.depositItem(logId, 1);
                     totalDeposited++;
+                    try {
+                        Thread.sleep(30);
+                    } catch (InterruptedException e) {}
                 }
             }
         }
@@ -181,7 +185,7 @@ public class WoodcuttingBot extends Bot {
         }
         
         api.closeBank();
-        return 100;
+        return 200;
     }
     
     public int getLogsChopped() {
