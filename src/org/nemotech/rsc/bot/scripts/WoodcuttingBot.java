@@ -4,33 +4,27 @@ import org.nemotech.rsc.bot.Bot;
 import org.nemotech.rsc.model.GameObject;
 
 public class WoodcuttingBot extends Bot {
-    
-    private int[] treeIds = { 0, 1, 70 };
-    private int[] logIds = { 14, 632, 633, 634, 635, 636 };
-    
+
+    private int[] treeIds = { 308 };
+    private int[] logIds = { 634 };
+
     private enum State {
         CHOPPING, WALKING, BANKING
     }
-    
+
     private State state = State.CHOPPING;
     private GameObject targetTree = null;
     private int logsChopped = 0;
     private int treesChopped = 0;
-    private int emptyTreeSearchCount = 0;
-    
+
     private int bankDepositedCount = 0;
     private int bankCurrentLogIndex = 0;
-    
-    private int patrolSearchCount = 0;
-    private int lastPatrolX = -1;
-    private int lastPatrolY = -1;
-    private double patrolAngle = 0;
-    
+
     public Integer areaMinX = null;
     public Integer areaMaxX = null;
     public Integer areaMinY = null;
     public Integer areaMaxY = null;
-    
+
     private static final int DEFAULT_AREA_SIZE = 200;
 
     public WoodcuttingBot() {
@@ -129,103 +123,54 @@ public class WoodcuttingBot extends Bot {
     
     private int chopTree() {
         GameObject tree = findTreeInArea();
-        
+
         if (tree == null || tree.isRemoved()) {
-            emptyTreeSearchCount++;
             targetTree = null;
-            
-            if (emptyTreeSearchCount > 3) {
-                emptyTreeSearchCount = 0;
-                return patrolArea();
-            }
-            return random(200, 400);
+            return searchForTree();
         }
-        
-        emptyTreeSearchCount = 0;
-        
+
         if (!isInArea(tree.getX(), tree.getY())) {
             targetTree = null;
-            return random(200, 400);
+            return searchForTree();
         }
-        
+
         int dist = api.distanceTo(tree);
-        
+
         if (dist > 1) {
             state = State.WALKING;
             targetTree = tree;
             api.walkTo(tree.getX(), tree.getY());
             return random(300, 500);
         }
-        
+
         state = State.CHOPPING;
         targetTree = tree;
         api.interactObject(tree);
         treesChopped++;
-        
+
         return 800;
     }
-    
+
+    private int searchForTree() {
+        if (areaMinX == null || areaMaxX == null || areaMinY == null || areaMaxY == null) {
+            int[] offsets = { -20, -15, -10, 10, 15, 20 };
+            int newX = api.getX() + offsets[random(0, offsets.length - 1)];
+            int newY = api.getY() + offsets[random(0, offsets.length - 1)];
+            api.walkTo(newX, newY);
+            return random(500, 800);
+        }
+
+        int newX = areaMinX + random(0, areaMaxX - areaMinX);
+        int newY = areaMinY + random(0, areaMaxY - areaMinY);
+        api.walkTo(newX, newY);
+        return random(600, 1000);
+    }
+
     private GameObject findTreeInArea() {
         if (areaMinX != null && areaMaxX != null && areaMinY != null && areaMaxY != null) {
             return api.getNearestObjectInArea(treeIds, areaMinX.intValue(), areaMaxX.intValue(), areaMinY.intValue(), areaMaxY.intValue());
         }
-        return api.getNearestObjectInLocalArea(treeIds, 25);
-    }
-    
-
-    private int patrolArea() {
-        int currentX = api.getX();
-        int currentY = api.getY();
-        
-        if (areaMinX == null || areaMaxX == null || areaMinY == null || areaMaxY == null) {
-            int[] offsets = { -10, -8, -6, 6, 8, 10 };
-            int newX = currentX + offsets[random(0, offsets.length - 1)];
-            int newY = currentY + offsets[random(0, offsets.length - 1)];
-            api.walkTo(newX, newY);
-            return random(500, 800);
-        }
-        
-        int areaWidth = areaMaxX - areaMinX;
-        int areaHeight = areaMaxY - areaMinY;
-        
-        if (areaWidth <= 0 || areaHeight <= 0) {
-            int centerX = (areaMinX + areaMaxX) / 2;
-            int centerY = (areaMinY + areaMaxY) / 2;
-            api.walkTo(centerX, centerY);
-            return random(500, 800);
-        }
-        
-        patrolAngle += 1;
-        if (patrolAngle > 8) {
-            patrolAngle = 0;
-        }
-        
-        int newX, newY;
-        
-        if (patrolAngle < 2) {
-            newX = currentX + 8;
-            newY = currentY;
-        } else if (patrolAngle < 4) {
-            newX = currentX;
-            newY = currentY + 8;
-        } else if (patrolAngle < 6) {
-            newX = currentX - 8;
-            newY = currentY;
-        } else {
-            newX = currentX;
-            newY = currentY - 8;
-        }
-        
-        if (newX < areaMinX) newX = areaMinX;
-        if (newX > areaMaxX) newX = areaMaxX;
-        if (newY < areaMinY) newY = areaMinY;
-        if (newY > areaMaxY) newY = areaMaxY;
-        
-        lastPatrolX = newX;
-        lastPatrolY = newY;
-        
-        api.walkTo(newX, newY);
-        return random(600, 1000);
+        return api.getNearestObjectInLocalArea(treeIds, 50);
     }
     private int bankLogs() {
         if (!api.isBankOpen()) {
