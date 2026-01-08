@@ -24,10 +24,7 @@ public class WoodcuttingBot extends Bot {
     private int patrolSearchCount = 0;
     private int lastPatrolX = -1;
     private int lastPatrolY = -1;
-    private int specialPatrolX = 537;
-    private int specialPatrolY = 488;
     private double patrolAngle = 0;
-    private boolean visitingSpecial = false;
     
     public Integer areaMinX = null;
     public Integer areaMaxX = null;
@@ -192,21 +189,6 @@ public class WoodcuttingBot extends Bot {
             return random(500, 800);
         }
         
-        int centerX = (areaMinX + areaMaxX) / 2;
-        int centerY = (areaMinY + areaMaxY) / 2;
-        
-        if (random(0, 100) < 10 && !visitingSpecial) {
-            visitingSpecial = true;
-            api.walkTo(specialPatrolX, specialPatrolY);
-            lastPatrolX = specialPatrolX;
-            lastPatrolY = specialPatrolY;
-            return random(1000, 1500);
-        }
-        
-        if (visitingSpecial && currentX == specialPatrolX && currentY == specialPatrolY) {
-            visitingSpecial = false;
-        }
-        
         patrolAngle += 1;
         if (patrolAngle > 8) {
             patrolAngle = 0;
@@ -269,17 +251,21 @@ public class WoodcuttingBot extends Bot {
             }
         }
         
-        if (depositedThisCall > 0) {
-            gameMessage("Banked " + depositedThisCall + " logs. Total: " + logsChopped);
+        boolean inventoryEmpty = true;
+        for (int id : logIds) {
+            if (api.getInventoryCount(id) > 0) {
+                inventoryEmpty = false;
+                break;
+            }
         }
-        
-        if (api.getInventorySize() == 0 || !api.isInventoryFull()) {
+
+        if (inventoryEmpty) {
             api.closeBank();
             bankDepositedCount = 0;
             bankCurrentLogIndex = 0;
             return random(300, 500);
         }
-        
+
         return random(200, 400);
     }
     
