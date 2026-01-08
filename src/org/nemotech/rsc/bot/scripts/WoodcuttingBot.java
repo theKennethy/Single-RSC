@@ -19,9 +19,9 @@ public class WoodcuttingBot extends Bot {
 
     private int bankDepositedCount = 0;
     private int bankCurrentLogIndex = 0;
-    private int lastSearchX = -1;
-    private int lastSearchY = -1;
-    private long lastSearchTime = 0;
+
+    private int roundX = 0;
+    private int roundY = 0;
     private long respawnStartTime = 0;
 
     public Integer areaMinX = null;
@@ -80,13 +80,16 @@ public class WoodcuttingBot extends Bot {
     public void onStart() {
         super.onStart();
         logsChopped = 0;
+        treesChopped = 0;
+        roundX = 0;
+        roundY = 0;
         state = State.CHOPPING;
         if (areaMinX == null) {
             areaMinX = SEERS_MAPLE_MIN_X;
             areaMaxX = SEERS_MAPLE_MAX_X;
             areaMinY = SEERS_MAPLE_MIN_Y;
             areaMaxY = SEERS_MAPLE_MAX_Y;
-            gameMessage("Woodcutting bot started! Searching for maple trees in Seers Village.");
+            gameMessage("Woodcutting bot started! Fixed rounds pattern for all trees.");
         } else {
             gameMessage("Woodcutting bot started! Area: " + areaMinX + "-" + areaMaxX + ", " + areaMinY + "-" + areaMaxY);
         }
@@ -111,14 +114,6 @@ public class WoodcuttingBot extends Bot {
             long timeWaiting = System.currentTimeMillis() - respawnStartTime;
             if (timeWaiting < RESPAWN_WAIT_TIME) {
                 return 500;
-            }
-            state = State.CHOPPING;
-        }
-
-        if (state == State.SEARCHING) {
-            long timeSinceSearch = System.currentTimeMillis() - lastSearchTime;
-            if (timeSinceSearch < 1000) {
-                return 100;
             }
             state = State.CHOPPING;
         }
@@ -169,24 +164,38 @@ public class WoodcuttingBot extends Bot {
 
     private int searchForTree() {
         state = State.SEARCHING;
-        lastSearchX = api.getX();
-        lastSearchY = api.getY();
-        lastSearchTime = System.currentTimeMillis();
-
+        
         int currentX = api.getX();
         int currentY = api.getY();
 
         if (currentX < areaMinX || currentX > areaMaxX ||
             currentY < areaMinY || currentY > areaMaxY) {
-            int walkX = areaMinX + random(0, areaMaxX - areaMinX);
-            int walkY = areaMinY + random(0, areaMaxY - areaMinY);
-            api.walkTo(walkX, walkY);
+            api.walkTo(areaMinX, areaMinY);
+            roundX = 0;
+            roundY = 0;
             return random(1500, 2000);
         }
 
-        int newX = areaMinX + random(0, areaMaxX - areaMinX);
-        int newY = areaMinY + random(0, areaMaxY - areaMinY);
-        api.walkTo(newX, newY);
+        int width = areaMaxX - areaMinX;
+        int height = areaMaxY - areaMinY;
+
+        int stepX = Math.max(1, width / 4);
+        int stepY = Math.max(1, height / 4);
+
+        int walkX = areaMinX + (roundX * stepX);
+        int walkY = areaMinY + (roundY * stepY);
+
+        api.walkTo(walkX, walkY);
+
+        roundX++;
+        if (roundX > 4) {
+            roundX = 0;
+            roundY++;
+            if (roundY > 4) {
+                roundY = 0;
+            }
+        }
+
         return random(1000, 1500);
     }
 
@@ -219,16 +228,28 @@ public class WoodcuttingBot extends Bot {
                 logsChopped += count;
                 gameMessage("Banked " + count + " logs. Total: " + logsChopped);
                 api.closeBank();
+                bankDepositedCount = 0;
+                bankCurrentLogIndex = 0;
+                roundX = 0;
+                roundY = 0;
                 return random(200, 400);
             }
         }
 
         api.closeBank();
+        bankDepositedCount = 0;
+        bankCurrentLogIndex = 0;
+        roundX = 0;
+        roundY = 0;
         return random(200, 400);
     }
     
     public int getLogsChopped() {
         return logsChopped;
+    }
+    
+    public int getTreesChopped() {
+        return treesChopped;
     }
     
     public State getState() {
