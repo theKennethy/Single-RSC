@@ -5,11 +5,11 @@ import org.nemotech.rsc.model.GameObject;
 
 public class WoodcuttingBot extends Bot {
 
-    private int[] treeIds = { 308 };
-    private int[] logIds = { 634 };
+    private int[] treeIds = { 0, 1, 70, 306, 307, 308, 309, 310 };
+    private int[] logIds = { 14, 632, 633, 634, 635, 636 };
 
     private enum State {
-        CHOPPING, WALKING, BANKING, SEARCHING
+        CHOPPING, WALKING, BANKING, SEARCHING, WAITING_RESPAWN
     }
 
     private State state = State.CHOPPING;
@@ -22,6 +22,7 @@ public class WoodcuttingBot extends Bot {
     private int lastSearchX = -1;
     private int lastSearchY = -1;
     private long lastSearchTime = 0;
+    private long respawnStartTime = 0;
 
     public Integer areaMinX = null;
     public Integer areaMaxX = null;
@@ -34,6 +35,7 @@ public class WoodcuttingBot extends Bot {
     private static final int SEERS_MAPLE_MAX_Y = 480;
     private static final int SEERS_VILLAGE_BANK_X = 490;
     private static final int SEERS_VILLAGE_BANK_Y = 470;
+    private static final int RESPAWN_WAIT_TIME = 5000;
 
     public WoodcuttingBot() {
         super("Woodcutting Bot");
@@ -105,6 +107,14 @@ public class WoodcuttingBot extends Bot {
             return 50;
         }
 
+        if (state == State.WAITING_RESPAWN) {
+            long timeWaiting = System.currentTimeMillis() - respawnStartTime;
+            if (timeWaiting < RESPAWN_WAIT_TIME) {
+                return 500;
+            }
+            state = State.CHOPPING;
+        }
+
         if (state == State.SEARCHING) {
             long timeSinceSearch = System.currentTimeMillis() - lastSearchTime;
             if (timeSinceSearch < 1000) {
@@ -124,6 +134,12 @@ public class WoodcuttingBot extends Bot {
         GameObject tree = findTreeInArea();
 
         if (tree == null || tree.isRemoved()) {
+            if (targetTree != null && !targetTree.isRemoved()) {
+                state = State.WAITING_RESPAWN;
+                respawnStartTime = System.currentTimeMillis();
+                targetTree = null;
+                return 500;
+            }
             targetTree = null;
             return searchForTree();
         }
