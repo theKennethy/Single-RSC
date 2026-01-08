@@ -142,48 +142,23 @@ public class WoodcuttingBot extends Bot {
     }
 
     private int searchForTree() {
-        GameObject tree = findTreeInArea();
+        int currentX = api.getX();
+        int currentY = api.getY();
+
+        if (currentX < areaMinX || currentX > areaMaxX ||
+            currentY < areaMinY || currentY > areaMaxY) {
+            api.walkTo(areaMinX.intValue(), areaMinY.intValue());
+            return random(300, 500);
+        }
         
-        if (tree == null || tree.isRemoved()) {
-            if (targetTree != null && !targetTree.isRemoved()) {
-                targetTree = null;
-                return 50;
-            }
-            targetTree = null;
-            
-            int currentX = api.getX();
-            int currentY = api.getY();
-
-            if (currentX < areaMinX || currentX > areaMaxX ||
-                currentY < areaMinY || currentY > areaMaxY) {
-                api.walkTo(areaMinX.intValue(), areaMinY.intValue());
-                return random(300, 500);
-            }
-            
-            int rangeX = areaMaxX - areaMinX;
-            int rangeY = areaMaxY - areaMinY;
-            
-            int scanX = areaMinX + random(0, rangeX);
-            int scanY = areaMinY + random(0, rangeY);
-            
-            api.walkTo(scanX, scanY);
-            return random(300, 500);
-        }
-
-        int dist = api.distanceTo(tree);
-        if (dist > 1) {
-            state = State.WALKING;
-            targetTree = tree;
-            api.walkTo(tree.getX(), tree.getY());
-            return random(300, 500);
-        }
-
-        state = State.CHOPPING;
-        targetTree = tree;
-        api.interactObject(tree);
-        treesChopped++;
-        targetTree = null;
-        return random(100, 200);
+        int rangeX = areaMaxX - areaMinX;
+        int rangeY = areaMaxY - areaMinY;
+        
+        int scanX = areaMinX + random(0, rangeX);
+        int scanY = areaMinY + random(0, rangeY);
+        
+        api.walkTo(scanX, scanY);
+        return random(300, 500);
     }
 
     private GameObject findTreeInArea() {
