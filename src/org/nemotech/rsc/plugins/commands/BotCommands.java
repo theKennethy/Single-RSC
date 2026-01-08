@@ -366,16 +366,46 @@ public class BotCommands extends Plugin implements CommandListener {
         BotManager manager = BotManager.getInstance();
         manager.stopAll();
         
+        int[] treeIds;
+        int[] logIds;
         String type = args.length > 0 ? args[0].toLowerCase() : "normal";
-        String location = args.length > 1 ? args[1].toLowerCase() : "seers";
         
-        player.getSender().sendMessage("@yel@[Debug] Tree type: '" + type + "', Location: '" + location + "'");
+        switch (type) {
+            case "oak":
+                treeIds = new int[] { 306 };
+                logIds = new int[] { 632 };
+                break;
+            case "willow":
+                treeIds = new int[] { 307 };
+                logIds = new int[] { 633 };
+                break;
+            case "maple":
+                treeIds = new int[] { 308 };
+                logIds = new int[] { 634 };
+                break;
+            case "yew":
+                treeIds = new int[] { 309 };
+                logIds = new int[] { 635 };
+                break;
+            case "magic":
+                treeIds = new int[] { 310 };
+                logIds = new int[] { 636 };
+                break;
+            case "normal":
+            case "tree":
+            case "regular":
+            default:
+                treeIds = new int[] { 0, 1, 70 };
+                logIds = new int[] { 14 };
+                type = "normal";
+                break;
+        }
         
-        WoodcuttingBot bot = new WoodcuttingBot(type, location);
+        WoodcuttingBot bot = new WoodcuttingBot(treeIds, logIds);
         manager.register(bot);
         manager.startBot(bot.getName());
         
-        player.getSender().sendMessage("@cya@[Bot] @gre@Started " + type + " woodcutting at " + location + "!");
+        player.getSender().sendMessage("@cya@[Bot] @gre@Started " + type + " woodcutting bot!");
     }
     
     private void startFishing(String[] args, Player player) {
