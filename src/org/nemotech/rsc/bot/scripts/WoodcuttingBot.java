@@ -18,6 +18,9 @@ public class WoodcuttingBot extends Bot {
     private int treesChopped = 0;
     private int emptyTreeSearchCount = 0;
     
+    private int bankDepositedCount = 0;
+    private int bankCurrentLogIndex = 0;
+    
     public Integer areaMinX = null;
     public Integer areaMaxX = null;
     public Integer areaMinY = null;
@@ -84,11 +87,17 @@ public class WoodcuttingBot extends Bot {
         if (api.isBusy() || api.isMoving()) {
             return 50;
         }
-
+        
         if (api.isInventoryFull()) {
+            bankDepositedCount = 0;
+            bankCurrentLogIndex = 0;
             return bankLogs();
         }
-
+        
+        if (bankDepositedCount > 0) {
+            return bankLogs();
+        }
+        
         return chopTree();
     }
     
@@ -154,23 +163,43 @@ public class WoodcuttingBot extends Bot {
             api.openBank();
             return random(800, 1200);
         }
-
-        int deposited = 0;
-        for (int logId : logIds) {
+        
+        int depositedThisCall = 0;
+        
+        for (int i = bankCurrentLogIndex; i < logIds.length; i++) {
+            int logId = logIds[i];
             int count = api.getInventoryCount(logId);
+            
             if (count > 0) {
-                api.depositItem(logId, count);
-                deposited += count;
-                logsChopped += count;
+                int toDeposit = count - bankDepositedCount;
+                if (toDeposit > 0) {
+                    api.depositItem(logId, 1);
+                    bankDepositedCount++;
+                    depositedThisCall++;
+                    logsChopped++;
+                    
+                    if (bankDepositedCount < count) {
+                        bankCurrentLogIndex = i;
+                        return random(200, 400);
+                    }
+                }
+                bankDepositedCount = 0;
+                bankCurrentLogIndex = i + 1;
             }
         }
-
-        if (deposited > 0) {
-            gameMessage("Banked " + deposited + " logs. Total: " + logsChopped);
+        
+        if (depositedThisCall > 0) {
+            gameMessage("Banked " + depositedThisCall + " logs. Total: " + logsChopped);
         }
-
-        api.closeBank();
-        return random(300, 500);
+        
+        if (api.getInventorySize() == 0 || !api.isInventoryFull()) {
+            api.closeBank();
+            bankDepositedCount = 0;
+            bankCurrentLogIndex = 0;
+            return random(300, 500);
+        }
+        
+        return random(200, 400);
     }
     
     public int getLogsChopped() {
