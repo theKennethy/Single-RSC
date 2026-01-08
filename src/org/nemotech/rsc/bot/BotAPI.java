@@ -725,6 +725,40 @@ public class BotAPI {
     }
     
     /**
+     * Finds the nearest game object by ID within a local radius around the player.
+     * This is useful for bots that should stay near their current position.
+     */
+    public GameObject getNearestObjectInLocalArea(int[] ids, int radius) {
+        GameObject nearest = null;
+        int nearestDist = Integer.MAX_VALUE;
+        
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dy = -radius; dy <= radius; dy++) {
+                int x = getX() + dx;
+                int y = getY() + dy;
+                
+                ActiveTile tile = World.getWorld().getTile(x, y);
+                if (tile == null || !tile.hasGameObject()) continue;
+                
+                GameObject obj = tile.getGameObject();
+                if (obj == null || obj.isRemoved()) continue;
+                
+                for (int id : ids) {
+                    if (obj.getID() == id) {
+                        int dist = Math.max(Math.abs(dx), Math.abs(dy));
+                        if (dist < nearestDist) {
+                            nearestDist = dist;
+                            nearest = obj;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        return nearest;
+    }
+    
+    /**
      * Finds ALL game objects by ID within specified area bounds.
      * Returns a list of all matching objects.
      */

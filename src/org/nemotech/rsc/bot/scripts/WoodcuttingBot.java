@@ -21,6 +21,10 @@ public class WoodcuttingBot extends Bot {
     private int bankDepositedCount = 0;
     private int bankCurrentLogIndex = 0;
     
+    private int patrolSearchCount = 0;
+    private int lastPatrolX = -1;
+    private int lastPatrolY = -1;
+    
     public Integer areaMinX = null;
     public Integer areaMaxX = null;
     public Integer areaMinY = null;
@@ -88,6 +92,13 @@ public class WoodcuttingBot extends Bot {
             return 50;
         }
         
+        if (areaMinX != null && !isInArea(api.getX(), api.getY())) {
+            int centerX = (areaMinX + areaMaxX) / 2;
+            int centerY = (areaMinY + areaMaxY) / 2;
+            api.walkTo(centerX, centerY);
+            return random(500, 800);
+        }
+        
         if (api.isInventoryFull()) {
             bankDepositedCount = 0;
             bankCurrentLogIndex = 0;
@@ -102,34 +113,15 @@ public class WoodcuttingBot extends Bot {
     }
     
     private int chopTree() {
-        GameObject tree;
-        if (areaMinX != null && areaMaxX != null && areaMinY != null && areaMaxY != null) {
-            tree = api.getNearestObjectInArea(treeIds, areaMinX.intValue(), areaMaxX.intValue(), areaMinY.intValue(), areaMaxY.intValue());
-        } else {
-            tree = api.getNearestObject(treeIds);
-        }
+        GameObject tree = findTreeInArea();
         
         if (tree == null || tree.isRemoved()) {
             emptyTreeSearchCount++;
             targetTree = null;
             
-            if (emptyTreeSearchCount > 10) {
+            if (emptyTreeSearchCount > 3) {
                 emptyTreeSearchCount = 0;
-                int currentX = api.getX();
-                int currentY = api.getY();
-                int[] offsets = { -8, -6, -4, 4, 6, 8 };
-                int randomOffsetX = offsets[random(0, offsets.length - 1)];
-                int randomOffsetY = offsets[random(0, offsets.length - 1)];
-                int newX = currentX + randomOffsetX;
-                int newY = currentY + randomOffsetY;
-                
-                if (isInArea(newX, newY)) {
-                    api.walkTo(newX, newY);
-                } else if (areaMinX != null) {
-                    int centerX = (areaMinX + areaMaxX) / 2;
-                    int centerY = (areaMinY + areaMaxY) / 2;
-                    api.walkTo(centerX, centerY);
-                }
+                return patrolArea();
             }
             return random(200, 400);
         }
@@ -156,6 +148,78 @@ public class WoodcuttingBot extends Bot {
         treesChopped++;
         
         return 800;
+    }
+    
+    private GameObject findTreeInArea() {
+        if (areaMinX != null && areaMaxX != null && areaMinY != null && areaMaxY != null) {
+            return api.getNearestObjectInArea(treeIds, areaMinX.intValue(), areaMaxX.intValue(), areaMinY.intValue(), areaMaxY.intValue());
+        }
+        return api.getNearestObjectInLocalArea(treeIds, 25);
+    }
+    
+    private int patrolArea() {
+        int currentX = api.getX();
+        int currentY = api.getY();
+        
+        if (areaMinX == null || areaMaxX == null || areaMinY == null || areaMaxY == null) {
+            int[] offsets = { -10, -8, -6, 6, 8, 10 };
+            int randomOffsetX = offsets[random(0, offsets.length - 1)];
+            int randomOffsetY = offsets[random(0, offsets.length - 1)];
+            int newX = currentX + randomOffsetX;
+            int newY = currentY + randomOffsetY;
+            api.walkTo(newX, newY);
+            return random(500, 800);
+        }
+        
+        int areaWidth = areaMaxX - areaMinX;
+        int areaHeight = areaMaxY - areaMinY;
+        
+        if (areaWidth <= 0 || areaHeight <= 0) {
+            int centerX = (areaMinX + areaMaxX) / 2;
+            int centerY = (areaMinY + areaMaxY) / 2;
+            api.walkTo(centerX, centerY);
+            return random(500, 800);
+        }
+        
+        int attempts = 0;
+        int newX = currentX;
+        int newY = currentY;
+        boolean validSpot = false;
+        
+        while (!validSpot && attempts < 10) {
+            attempts++;
+            
+            double randX = Math.random();
+            double randY = Math.random();
+            
+            newX = areaMinX + (int)(randX * areaWidth);
+            newY = areaMinY + (int)(randY * areaHeight);
+            
+            if (newX < areaMinX) newX = areaMinX;
+            if (newX > areaMaxX) newX = areaMaxX;
+            if (newY < areaMinY) newY = areaMinY;
+            if (newY > areaMaxY) newY = areaMaxY;
+            
+            if (lastPatrolX == -1 && lastPatrolY == -1) {
+                validSpot = true;
+            } else {
+                int distFromLast = Math.max(Math.abs(newX - lastPatrolX), Math.abs(newY - lastPatrolY));
+                if (distFromLast > 5) {
+                    validSpot = true;
+                }
+            }
+        }
+        
+        if (!validSpot) {
+            newX = areaMinX + random(0, areaWidth);
+            newY = areaMinY + random(0, areaHeight);
+        }
+        
+        lastPatrolX = newX;
+        lastPatrolY = newY;
+        
+        api.walkTo(newX, newY);
+        return random(800, 1200);
     }
     
     private int bankLogs() {
