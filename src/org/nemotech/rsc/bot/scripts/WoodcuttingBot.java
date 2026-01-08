@@ -140,7 +140,7 @@ public class WoodcuttingBot extends Bot {
             state = State.WALKING;
             targetTree = tree;
             api.walkTo(tree.getX(), tree.getY());
-            return random(300, 500);
+            return random(500, 800);
         }
 
         state = State.CHOPPING;
@@ -148,7 +148,8 @@ public class WoodcuttingBot extends Bot {
         api.interactObject(tree);
         treesChopped++;
 
-        return 800;
+        targetTree = null;
+        return random(200, 400);
     }
 
     private int searchForTree() {
