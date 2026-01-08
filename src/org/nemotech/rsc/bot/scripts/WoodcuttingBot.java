@@ -29,6 +29,8 @@ public class WoodcuttingBot extends Bot {
     public Integer areaMaxX = null;
     public Integer areaMinY = null;
     public Integer areaMaxY = null;
+    
+    private static final int DEFAULT_AREA_SIZE = 30;
 
     public WoodcuttingBot() {
         super("Woodcutting Bot");
@@ -74,7 +76,13 @@ public class WoodcuttingBot extends Bot {
         super.onStart();
         logsChopped = 0;
         state = State.CHOPPING;
-        gameMessage("Woodcutting bot started!");
+        int startX = api.getX();
+        int startY = api.getY();
+        areaMinX = startX - DEFAULT_AREA_SIZE / 2;
+        areaMaxX = startX + DEFAULT_AREA_SIZE / 2;
+        areaMinY = startY - DEFAULT_AREA_SIZE / 2;
+        areaMaxY = startY + DEFAULT_AREA_SIZE / 2;
+        gameMessage("Woodcutting bot started! Area: " + areaMinX + "-" + areaMaxX + ", " + areaMinY + "-" + areaMaxY);
     }
     
     @Override
