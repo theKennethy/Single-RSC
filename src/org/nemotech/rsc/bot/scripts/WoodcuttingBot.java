@@ -29,12 +29,12 @@ public class WoodcuttingBot extends Bot {
     public Integer areaMinY = null;
     public Integer areaMaxY = null;
 
-    public Integer bankMinX = null;
-    public Integer bankMaxX = null;
-    public Integer bankMinY = null;
-    public Integer bankMaxY = null;
-
-    private static final int DEFAULT_SEARCH_RADIUS = 50;
+    private static final int SEERS_MAPLE_MIN_X = 480;
+    private static final int SEERS_MAPLE_MAX_X = 550;
+    private static final int SEERS_MAPLE_MIN_Y = 420;
+    private static final int SEERS_MAPLE_MAX_Y = 480;
+    private static final int SEERS_VILLAGE_BANK_X = 490;
+    private static final int SEERS_VILLAGE_BANK_Y = 470;
     private static final int RESPAWN_WAIT_TIME = 5000;
 
     public WoodcuttingBot() {
@@ -69,20 +69,6 @@ public class WoodcuttingBot extends Bot {
         this.areaMaxY = null;
     }
     
-    public void setBankBounds(int minX, int maxX, int minY, int maxY) {
-        this.bankMinX = minX;
-        this.bankMaxX = maxX;
-        this.bankMinY = minY;
-        this.bankMaxY = maxY;
-    }
-    
-    public void clearBankBounds() {
-        this.bankMinX = null;
-        this.bankMaxX = null;
-        this.bankMinY = null;
-        this.bankMaxY = null;
-    }
-    
     public boolean isInArea(int x, int y) {
         if (areaMinX == null || areaMaxX == null || areaMinY == null || areaMaxY == null) {
             return true;
@@ -96,13 +82,11 @@ public class WoodcuttingBot extends Bot {
         logsChopped = 0;
         state = State.CHOPPING;
         if (areaMinX == null) {
-            int startX = api.getX();
-            int startY = api.getY();
-            areaMinX = startX - DEFAULT_SEARCH_RADIUS;
-            areaMaxX = startX + DEFAULT_SEARCH_RADIUS;
-            areaMinY = startY - DEFAULT_SEARCH_RADIUS;
-            areaMaxY = startY + DEFAULT_SEARCH_RADIUS;
-            gameMessage("Woodcutting bot started! Searching in area: " + areaMinX + "-" + areaMaxX + ", " + areaMinY + "-" + areaMaxY);
+            areaMinX = SEERS_MAPLE_MIN_X;
+            areaMaxX = SEERS_MAPLE_MAX_X;
+            areaMinY = SEERS_MAPLE_MIN_Y;
+            areaMaxY = SEERS_MAPLE_MAX_Y;
+            gameMessage("Woodcutting bot started! Searching for maple trees in Seers Village.");
         } else {
             gameMessage("Woodcutting bot started! Area: " + areaMinX + "-" + areaMaxX + ", " + areaMinY + "-" + areaMaxY);
         }
@@ -217,18 +201,10 @@ public class WoodcuttingBot extends Bot {
         int currentX = api.getX();
         int currentY = api.getY();
 
-        boolean inBankArea = true;
-        if (bankMinX != null && bankMaxX != null && bankMinY != null && bankMaxY != null) {
-            inBankArea = currentX >= bankMinX && currentX <= bankMaxX && currentY >= bankMinY && currentY <= bankMaxY;
-        }
-
-        if (!inBankArea) {
-            if (bankMinX != null && bankMaxX != null && bankMinY != null && bankMaxY != null) {
-                int walkX = bankMinX + random(0, bankMaxX - bankMinX);
-                int walkY = bankMinY + random(0, bankMaxY - bankMinY);
-                api.walkTo(walkX, walkY);
-                return random(1500, 2000);
-            }
+        if (currentX < SEERS_VILLAGE_BANK_X - 15 || currentX > SEERS_VILLAGE_BANK_X + 15 ||
+            currentY < SEERS_VILLAGE_BANK_Y - 15 || currentY > SEERS_VILLAGE_BANK_Y + 15) {
+            api.walkTo(SEERS_VILLAGE_BANK_X, SEERS_VILLAGE_BANK_Y);
+            return random(1500, 2000);
         }
 
         if (!api.isBankOpen()) {
