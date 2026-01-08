@@ -226,31 +226,24 @@ public class WoodcuttingBot extends Bot {
             api.openBank();
             return random(800, 1200);
         }
-        
-        int depositedThisCall = 0;
-        
+
         for (int i = bankCurrentLogIndex; i < logIds.length; i++) {
             int logId = logIds[i];
             int count = api.getInventoryCount(logId);
-            
-            if (count > 0) {
-                int toDeposit = count - bankDepositedCount;
-                if (toDeposit > 0) {
-                    api.depositItem(logId, 1);
-                    bankDepositedCount++;
-                    depositedThisCall++;
-                    logsChopped++;
-                    
-                    if (bankDepositedCount < count) {
-                        bankCurrentLogIndex = i;
-                        return random(200, 400);
-                    }
-                }
+
+            while (count > 0 && api.getInventoryCount(logId) > 0) {
+                api.depositItem(logId, 1);
+                logsChopped++;
+                count--;
+                bankDepositedCount++;
+            }
+
+            if (count == 0 && api.getInventoryCount(logId) == 0) {
                 bankDepositedCount = 0;
                 bankCurrentLogIndex = i + 1;
             }
         }
-        
+
         boolean inventoryEmpty = true;
         for (int id : logIds) {
             if (api.getInventoryCount(id) > 0) {
