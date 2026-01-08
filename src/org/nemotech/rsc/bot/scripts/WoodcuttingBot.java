@@ -165,16 +165,20 @@ public class WoodcuttingBot extends Bot {
         }
         
         int totalDeposited = 0;
+        int totalItems = api.getInventorySize();
+        int depositedThisRound = 0;
         
-        for (int logId : logIds) {
-            int count = api.getInventoryCount(logId);
-            if (count > 0) {
-                for (int i = 0; i < count; i++) {
-                    api.depositItem(logId, 1);
-                    totalDeposited++;
+        do {
+            depositedThisRound = 0;
+            for (int logId : logIds) {
+                int count = api.getInventoryCount(logId);
+                if (count > 0) {
+                    api.depositItem(logId, count);
+                    totalDeposited += count;
+                    depositedThisRound += count;
                 }
             }
-        }
+        } while (depositedThisRound > 0 && totalDeposited < totalItems);
         
         if (totalDeposited > 0) {
             gameMessage("Banked " + totalDeposited + " logs.");
