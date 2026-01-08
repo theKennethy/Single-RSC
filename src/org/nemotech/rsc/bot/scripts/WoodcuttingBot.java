@@ -20,9 +20,31 @@ public class WoodcuttingBot extends Bot {
     private int bankDepositedCount = 0;
     private int bankCurrentLogIndex = 0;
 
-    private int roundX = 0;
-    private int roundY = 0;
+    private int treeIndex = 0;
     private long lastSearchTime = 0;
+
+    private static final int[][] SEERS_TREES = {
+        {522, 458},
+        {525, 455},
+        {520, 452},
+        {530, 450},
+        {535, 455},
+        {540, 458},
+        {538, 462},
+        {532, 465},
+        {526, 468},
+        {520, 465},
+        {515, 460},
+        {510, 455},
+        {505, 450},
+        {500, 445},
+        {495, 450},
+        {490, 455},
+        {485, 460},
+        {490, 465},
+        {495, 470},
+        {500, 475}
+    };
 
     public Integer areaMinX = null;
     public Integer areaMaxX = null;
@@ -80,15 +102,14 @@ public class WoodcuttingBot extends Bot {
         super.onStart();
         logsChopped = 0;
         treesChopped = 0;
-        roundX = 0;
-        roundY = 0;
+        treeIndex = 0;
         state = State.CHOPPING;
         if (areaMinX == null) {
             areaMinX = SEERS_MAPLE_MIN_X;
             areaMaxX = SEERS_MAPLE_MAX_X;
             areaMinY = SEERS_MAPLE_MIN_Y;
             areaMaxY = SEERS_MAPLE_MAX_Y;
-            gameMessage("Woodcutting bot started! Fixed rounds pattern for all trees.");
+            gameMessage("Woodcutting bot started! Fixed tree order for Seers Village.");
         } else {
             gameMessage("Woodcutting bot started! Area: " + areaMinX + "-" + areaMaxX + ", " + areaMinY + "-" + areaMaxY);
         }
@@ -117,15 +138,17 @@ public class WoodcuttingBot extends Bot {
     }
     
     private int chopTree() {
-        GameObject tree = findTreeInArea();
-
-        if (tree == null || tree.isRemoved()) {
-            targetTree = null;
-            return searchForTree();
+        if (treeIndex >= SEERS_TREES.length) {
+            treeIndex = 0;
         }
 
-        if (!isInArea(tree.getX(), tree.getY())) {
-            targetTree = null;
+        int targetX = SEERS_TREES[treeIndex][0];
+        int targetY = SEERS_TREES[treeIndex][1];
+
+        GameObject tree = findTreeAtLocation(targetX, targetY);
+
+        if (tree == null || tree.isRemoved()) {
+            treeIndex++;
             return searchForTree();
         }
 
@@ -134,65 +157,40 @@ public class WoodcuttingBot extends Bot {
         if (dist > 1) {
             state = State.WALKING;
             targetTree = tree;
-            api.walkTo(tree.getX(), tree.getY());
-            return random(500, 800);
+            api.walkTo(targetX, targetY);
+            return random(300, 500);
         }
 
         state = State.CHOPPING;
         targetTree = tree;
         api.interactObject(tree);
         treesChopped++;
+        gameMessage("Chopping tree at " + targetX + ", " + targetY);
 
-        targetTree = null;
-        return random(200, 400);
+        treeIndex++;
+        return random(100, 200);
+    }
+
+    private GameObject findTreeAtLocation(int x, int y) {
+        return api.getNearestObjectInArea(treeIds, x - 1, x + 1, y - 1, y + 1);
     }
 
     private int searchForTree() {
         long now = System.currentTimeMillis();
-        if (now - lastSearchTime < 100) {
+        if (now - lastSearchTime < 50) {
             return 50;
         }
         lastSearchTime = now;
         
-        int currentX = api.getX();
-        int currentY = api.getY();
-
-        if (currentX < areaMinX || currentX > areaMaxX ||
-            currentY < areaMinY || currentY > areaMaxY) {
-            api.walkTo(areaMinX, areaMinY);
-            roundX = 0;
-            roundY = 0;
-            return random(500, 800);
+        if (treeIndex >= SEERS_TREES.length) {
+            treeIndex = 0;
         }
 
-        int width = areaMaxX - areaMinX;
-        int height = areaMaxY - areaMinY;
+        int targetX = SEERS_TREES[treeIndex][0];
+        int targetY = SEERS_TREES[treeIndex][1];
 
-        int stepX = Math.max(1, width / 4);
-        int stepY = Math.max(1, height / 4);
-
-        int walkX = areaMinX + (roundX * stepX);
-        int walkY = areaMinY + (roundY * stepY);
-
-        api.walkTo(walkX, walkY);
-
-        roundX++;
-        if (roundX > 4) {
-            roundX = 0;
-            roundY++;
-            if (roundY > 4) {
-                roundY = 0;
-            }
-        }
-
-        return random(500, 800);
-    }
-
-    private GameObject findTreeInArea() {
-        if (areaMinX != null && areaMaxX != null && areaMinY != null && areaMaxY != null) {
-            return api.getNearestObjectInArea(treeIds, areaMinX.intValue(), areaMaxX.intValue(), areaMinY.intValue(), areaMaxY.intValue());
-        }
-        return api.getNearestObjectInLocalArea(treeIds, 200);
+        api.walkTo(targetX, targetY);
+        return random(300, 500);
     }
 
     private int bankLogs() {
@@ -202,12 +200,12 @@ public class WoodcuttingBot extends Bot {
         if (currentX < SEERS_VILLAGE_BANK_X - 15 || currentX > SEERS_VILLAGE_BANK_X + 15 ||
             currentY < SEERS_VILLAGE_BANK_Y - 15 || currentY > SEERS_VILLAGE_BANK_Y + 15) {
             api.walkTo(SEERS_VILLAGE_BANK_X, SEERS_VILLAGE_BANK_Y);
-            return random(500, 800);
+            return random(300, 500);
         }
 
         if (!api.isBankOpen()) {
             api.openBank();
-            return random(200, 400);
+            return random(100, 200);
         }
 
         for (int id : logIds) {
@@ -219,18 +217,16 @@ public class WoodcuttingBot extends Bot {
                 api.closeBank();
                 bankDepositedCount = 0;
                 bankCurrentLogIndex = 0;
-                roundX = 0;
-                roundY = 0;
-                return random(200, 400);
+                treeIndex = 0;
+                return random(100, 200);
             }
         }
 
         api.closeBank();
         bankDepositedCount = 0;
         bankCurrentLogIndex = 0;
-        roundX = 0;
-        roundY = 0;
-        return random(200, 400);
+        treeIndex = 0;
+        return random(100, 200);
     }
     
     public int getLogsChopped() {
