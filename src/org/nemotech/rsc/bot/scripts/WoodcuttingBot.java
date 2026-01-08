@@ -5,8 +5,8 @@ import org.nemotech.rsc.model.GameObject;
 
 public class WoodcuttingBot extends Bot {
 
-    private int[] treeIds = { 308 };
-    private int[] logIds = { 634 };
+    private int[] treeIds = { 0, 1, 70 };
+    private int[] logIds = { 14 };
 
     private enum State {
         CHOPPING, WALKING, BANKING

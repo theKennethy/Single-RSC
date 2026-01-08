@@ -137,34 +137,36 @@ public class MiningBot extends Bot {
     private int mineRock() {
         // Find nearest rock
         targetRock = api.getNearestObject(rockIds);
-        
+
         if (targetRock == null || targetRock.isRemoved()) {
             state = State.IDLE;
             targetRock = null;
-            emptyRockSearchCount++;
-            
-            if (emptyRockSearchCount > 5) {
-                gameMessage("No rocks found nearby, searching...");
-                emptyRockSearchCount = 0;
-            }
-            return random(500, 1500);
+            return searchForRock();
         }
-        
+
         emptyRockSearchCount = 0;
-        
+
         // Check if we're close enough to interact
         if (api.distanceTo(targetRock) > 1) {
             state = State.WALKING_TO_ROCK;
             api.walkTo(targetRock.getX(), targetRock.getY());
             return random(600, 1000);
         }
-        
+
         // Mine the rock
         state = State.MINING;
         api.interactObject(targetRock);
         rocksMined++;
-        
+
         return random(2000, 4000);
+    }
+
+    private int searchForRock() {
+        int[] offsets = { -25, -20, -15, 15, 20, 25 };
+        int newX = api.getX() + offsets[random(0, offsets.length - 1)];
+        int newY = api.getY() + offsets[random(0, offsets.length - 1)];
+        api.walkTo(newX, newY);
+        return random(600, 1000);
     }
     
     private int bankOres() {

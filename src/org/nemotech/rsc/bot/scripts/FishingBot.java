@@ -144,34 +144,36 @@ public class FishingBot extends Bot {
     private int fish() {
         // Find nearest fishing spot
         targetSpot = api.getNearestObject(fishingSpotIds);
-        
+
         if (targetSpot == null || targetSpot.isRemoved()) {
             state = State.IDLE;
             targetSpot = null;
-            emptySpotSearchCount++;
-            
-            if (emptySpotSearchCount > 5) {
-                gameMessage("No fishing spots found nearby, searching...");
-                emptySpotSearchCount = 0;
-            }
-            return random(500, 1500);
+            return searchForSpot();
         }
-        
+
         emptySpotSearchCount = 0;
-        
+
         // Check if we're close enough to interact
         if (api.distanceTo(targetSpot) > 1) {
             state = State.WALKING_TO_SPOT;
             api.walkTo(targetSpot.getX(), targetSpot.getY());
             return random(600, 1000);
         }
-        
+
         // Start fishing
         state = State.FISHING;
         api.interactObject(targetSpot);
         spotsSearched++;
-        
+
         return random(2000, 4000);
+    }
+
+    private int searchForSpot() {
+        int[] offsets = { -25, -20, -15, 15, 20, 25 };
+        int newX = api.getX() + offsets[random(0, offsets.length - 1)];
+        int newY = api.getY() + offsets[random(0, offsets.length - 1)];
+        api.walkTo(newX, newY);
+        return random(600, 1000);
     }
     
     private int bankFish() {
