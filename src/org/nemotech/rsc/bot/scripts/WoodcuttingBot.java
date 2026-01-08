@@ -24,6 +24,8 @@ public class WoodcuttingBot extends Bot {
     private int patrolSearchCount = 0;
     private int lastPatrolX = -1;
     private int lastPatrolY = -1;
+    private int specialPatrolX = 537;
+    private int specialPatrolY = 488;
     
     public Integer areaMinX = null;
     public Integer areaMaxX = null;
@@ -189,6 +191,13 @@ public class WoodcuttingBot extends Bot {
             return random(500, 800);
         }
         
+
+        if (random(0, 100) < 10 && (lastPatrolX != specialPatrolX || lastPatrolY != specialPatrolY)) {
+            api.walkTo(specialPatrolX, specialPatrolY);
+            lastPatrolX = specialPatrolX;
+            lastPatrolY = specialPatrolY;
+            return random(1000, 1500);
+        }
         int attempts = 0;
         int newX = currentX;
         int newY = currentY;
