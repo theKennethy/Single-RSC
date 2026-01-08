@@ -5,8 +5,8 @@ import org.nemotech.rsc.model.GameObject;
 
 public class WoodcuttingBot extends Bot {
 
-    private int[] treeIds = { 0, 1, 70 };
-    private int[] logIds = { 14 };
+    private int[] treeIds = { 308 };
+    private int[] logIds = { 634 };
 
     private enum State {
         CHOPPING, WALKING, BANKING, SEARCHING
@@ -28,10 +28,12 @@ public class WoodcuttingBot extends Bot {
     public Integer areaMinY = null;
     public Integer areaMaxY = null;
 
-    private static final int DEFAULT_AREA_SIZE = 200;
-    private static final int SEERS_VILLAGE_X = 500;
-    private static final int SEERS_VILLAGE_Y = 450;
-    private static final int SEARCH_RADIUS = 60;
+    private static final int SEERS_MAPLE_MIN_X = 480;
+    private static final int SEERS_MAPLE_MAX_X = 550;
+    private static final int SEERS_MAPLE_MIN_Y = 420;
+    private static final int SEERS_MAPLE_MAX_Y = 480;
+    private static final int SEERS_VILLAGE_BANK_X = 490;
+    private static final int SEERS_VILLAGE_BANK_Y = 470;
 
     public WoodcuttingBot() {
         super("Woodcutting Bot");
@@ -77,13 +79,15 @@ public class WoodcuttingBot extends Bot {
         super.onStart();
         logsChopped = 0;
         state = State.CHOPPING;
-        int startX = api.getX();
-        int startY = api.getY();
-        areaMinX = startX - DEFAULT_AREA_SIZE / 2;
-        areaMaxX = startX + DEFAULT_AREA_SIZE / 2;
-        areaMinY = startY - DEFAULT_AREA_SIZE / 2;
-        areaMaxY = startY + DEFAULT_AREA_SIZE / 2;
-        gameMessage("Woodcutting bot started! Area: " + areaMinX + "-" + areaMaxX + ", " + areaMinY + "-" + areaMaxY);
+        if (areaMinX == null) {
+            areaMinX = SEERS_MAPLE_MIN_X;
+            areaMaxX = SEERS_MAPLE_MAX_X;
+            areaMinY = SEERS_MAPLE_MIN_Y;
+            areaMaxY = SEERS_MAPLE_MAX_Y;
+            gameMessage("Woodcutting bot started! Searching for maple trees in Seers Village.");
+        } else {
+            gameMessage("Woodcutting bot started! Area: " + areaMinX + "-" + areaMaxX + ", " + areaMinY + "-" + areaMaxY);
+        }
     }
     
     @Override
@@ -155,21 +159,13 @@ public class WoodcuttingBot extends Bot {
 
         int currentX = api.getX();
         int currentY = api.getY();
-        int distFromSeers = api.distanceTo(SEERS_VILLAGE_X, SEERS_VILLAGE_Y);
 
-        if (distFromSeers > SEARCH_RADIUS) {
-            int walkX = SEERS_VILLAGE_X + random(-20, 20);
-            int walkY = SEERS_VILLAGE_Y + random(-20, 20);
+        if (currentX < areaMinX || currentX > areaMaxX ||
+            currentY < areaMinY || currentY > areaMaxY) {
+            int walkX = areaMinX + random(0, areaMaxX - areaMinX);
+            int walkY = areaMinY + random(0, areaMaxY - areaMinY);
             api.walkTo(walkX, walkY);
             return random(1500, 2000);
-        }
-
-        if (areaMinX == null || areaMaxX == null || areaMinY == null || areaMaxY == null) {
-            int[] offsets = { -50, -40, -30, -20, 20, 30, 40, 50 };
-            int newX = api.getX() + offsets[random(0, offsets.length - 1)];
-            int newY = api.getY() + offsets[random(0, offsets.length - 1)];
-            api.walkTo(newX, newY);
-            return random(1000, 1500);
         }
 
         int newX = areaMinX + random(0, areaMaxX - areaMinX);
@@ -184,7 +180,17 @@ public class WoodcuttingBot extends Bot {
         }
         return api.getNearestObjectInLocalArea(treeIds, 200);
     }
+
     private int bankLogs() {
+        int currentX = api.getX();
+        int currentY = api.getY();
+
+        if (currentX < SEERS_VILLAGE_BANK_X - 15 || currentX > SEERS_VILLAGE_BANK_X + 15 ||
+            currentY < SEERS_VILLAGE_BANK_Y - 15 || currentY > SEERS_VILLAGE_BANK_Y + 15) {
+            api.walkTo(SEERS_VILLAGE_BANK_X, SEERS_VILLAGE_BANK_Y);
+            return random(1500, 2000);
+        }
+
         if (!api.isBankOpen()) {
             api.openBank();
             return random(500, 800);
