@@ -9,7 +9,7 @@ public class WoodcuttingBot extends Bot {
     private int[] logIds = { 14, 632, 633, 634, 635, 636 };
 
     private enum State {
-        CHOPPING, WALKING, BANKING, SEARCHING, WAITING_RESPAWN
+        CHOPPING, WALKING, BANKING, WAITING_RESPAWN
     }
 
     private State state = State.CHOPPING;
@@ -23,6 +23,7 @@ public class WoodcuttingBot extends Bot {
     private int roundX = 0;
     private int roundY = 0;
     private long respawnStartTime = 0;
+    private long lastSearchTime = 0;
 
     public Integer areaMinX = null;
     public Integer areaMaxX = null;
@@ -116,6 +117,7 @@ public class WoodcuttingBot extends Bot {
                 return 500;
             }
             state = State.CHOPPING;
+            targetTree = null;
         }
 
         if (api.isInventoryFull() || bankDepositedCount > 0 || bankCurrentLogIndex > 0) {
@@ -163,7 +165,11 @@ public class WoodcuttingBot extends Bot {
     }
 
     private int searchForTree() {
-        state = State.SEARCHING;
+        long now = System.currentTimeMillis();
+        if (now - lastSearchTime < 1000) {
+            return 100;
+        }
+        lastSearchTime = now;
         
         int currentX = api.getX();
         int currentY = api.getY();
