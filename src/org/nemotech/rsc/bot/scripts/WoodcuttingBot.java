@@ -30,7 +30,7 @@ public class WoodcuttingBot extends Bot {
     public Integer areaMinY = null;
     public Integer areaMaxY = null;
     
-    private static final int DEFAULT_AREA_SIZE = 30;
+    private static final int DEFAULT_AREA_SIZE = 200;
 
     public WoodcuttingBot() {
         super("Woodcutting Bot");
