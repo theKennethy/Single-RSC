@@ -128,7 +128,7 @@ public class WoodcuttingBot extends Bot {
         int dist = api.distanceTo(tree);
         gameMessage("Tree found at " + tree.getX() + "," + tree.getY() + " (dist=" + dist + ")");
 
-        if (dist > 1) {
+        if (dist > 2) {
             state = State.WALKING;
             targetTree = tree;
             api.walkTo(tree.getX(), tree.getY());
@@ -141,10 +141,12 @@ public class WoodcuttingBot extends Bot {
             return searchForTree();
         }
 
-        gameMessage("Chopping tree!");
+        gameMessage("Chopping tree at " + tree.getX() + "," + tree.getY() + "!");
         state = State.CHOPPING;
-        api.interactObject(tree);
         treesChopped++;
+        
+        api.walkTo(tree.getX(), tree.getY());
+        
         targetTree = null;
         return random(100, 200);
     }
