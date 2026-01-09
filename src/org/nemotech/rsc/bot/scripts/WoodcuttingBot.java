@@ -115,15 +115,18 @@ public class WoodcuttingBot extends Bot {
 
         if (tree == null || tree.isRemoved()) {
             targetTree = null;
+            gameMessage("No tree found, searching...");
             return searchForTree();
         }
 
         if (!isInArea(tree.getX(), tree.getY())) {
             targetTree = null;
+            gameMessage("Tree outside area, searching...");
             return searchForTree();
         }
 
         int dist = api.distanceTo(tree);
+        gameMessage("Tree found at " + tree.getX() + "," + tree.getY() + " (dist=" + dist + ")");
 
         if (dist > 1) {
             state = State.WALKING;
@@ -132,6 +135,7 @@ public class WoodcuttingBot extends Bot {
             return random(300, 500);
         }
 
+        gameMessage("Chopping tree!");
         state = State.CHOPPING;
         targetTree = tree;
         api.interactObject(tree);
@@ -144,9 +148,11 @@ public class WoodcuttingBot extends Bot {
     private int searchForTree() {
         int currentX = api.getX();
         int currentY = api.getY();
+        gameMessage("At " + currentX + "," + currentY + ", searching for tree...");
 
         if (currentX < areaMinX || currentX > areaMaxX ||
             currentY < areaMinY || currentY > areaMaxY) {
+            gameMessage("Outside area, walking to start...");
             api.walkTo(areaMinX.intValue(), areaMinY.intValue());
             return random(300, 500);
         }
@@ -157,6 +163,7 @@ public class WoodcuttingBot extends Bot {
         int scanX = areaMinX + random(0, rangeX);
         int scanY = areaMinY + random(0, rangeY);
         
+        gameMessage("Walking to scan position " + scanX + "," + scanY + "...");
         api.walkTo(scanX, scanY);
         return random(300, 500);
     }
