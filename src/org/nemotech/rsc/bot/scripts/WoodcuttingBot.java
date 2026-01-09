@@ -135,12 +135,16 @@ public class WoodcuttingBot extends Bot {
             return random(300, 500);
         }
 
+        if (tree == null || tree.isRemoved()) {
+            gameMessage("Tree gone before chop, searching...");
+            targetTree = null;
+            return searchForTree();
+        }
+
         gameMessage("Chopping tree!");
         state = State.CHOPPING;
-        targetTree = tree;
         api.interactObject(tree);
         treesChopped++;
-
         targetTree = null;
         return random(100, 200);
     }
