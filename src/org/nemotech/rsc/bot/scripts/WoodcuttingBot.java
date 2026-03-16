@@ -138,9 +138,9 @@ public class WoodcuttingBot extends Bot {
         state = State.CHOPPING;
         treesChopped++;
         
-        api.walkTo(tree.getX(), tree.getY());
+        api.interactObject(tree);
         
-        return random(100, 200);
+        return random(2000, 4000);
     }
 
     private int searchForTree() {
