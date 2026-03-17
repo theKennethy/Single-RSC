@@ -5,8 +5,11 @@ import org.nemotech.rsc.model.GameObject;
 
 public class WoodcuttingBot extends Bot {
 
-    private int[] treeIds = { 0, 1, 70, 306, 307, 308, 309, 310 };
+    private int[] treeIds = { 1, 2, 71, 246, 307, 308, 309, 310, 311 };
     private int[] logIds = { 14, 632, 633, 634, 635, 636 };
+
+    // Trees where "Chop" is the second (right-click) command instead of the first
+    private static final int[] RIGHT_CLICK_CHOP_TREES = { 71 };
 
     private enum State {
         CHOPPING, WALKING, BANKING
@@ -181,8 +184,12 @@ public class WoodcuttingBot extends Bot {
         lastTreeX = tree.getX();
         lastTreeY = tree.getY();
         logCountBeforeChop = getTotalLogCount();
-        
-        api.interactObject(tree);
+
+        if (isRightClickChop(tree.getID())) {
+            api.interactObjectSecondary(tree);
+        } else {
+            api.interactObject(tree);
+        }
         
         return random(2000, 4000);
     }
@@ -193,6 +200,13 @@ public class WoodcuttingBot extends Bot {
             total += api.getInventoryCount(id);
         }
         return total;
+    }
+
+    private boolean isRightClickChop(int treeId) {
+        for (int id : RIGHT_CLICK_CHOP_TREES) {
+            if (id == treeId) return true;
+        }
+        return false;
     }
 
     private int searchForTree() {

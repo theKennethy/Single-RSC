@@ -881,6 +881,14 @@ public class BotAPI {
         if (obj == null || isBusy()) return;
         ActionManager.get(ObjectActionHandler.class).handleObjectAction(obj.getX(), obj.getY(), true);
     }
+
+    /**
+     * Interacts with a game object (secondary/right-click action).
+     */
+    public void interactObjectSecondary(GameObject obj) {
+        if (obj == null || isBusy()) return;
+        ActionManager.get(ObjectActionHandler.class).handleObjectAction(obj.getX(), obj.getY(), false);
+    }
     
     /**
      * Uses an item on a game object.
