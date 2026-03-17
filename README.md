@@ -244,9 +244,10 @@ Create a user named exactly **`root`** (case-sensitive) to unlock:
 
 ## Media
 
-![RSCSP1](https://nemotech.org/rsc/rsc-1.png "RSCSP1")
-![RSCSP2](https://nemotech.org/rsc/rsc-2.png "RSCSP2")
-![RSCSP3](https://nemotech.org/rsc/rsc-3.png "RSCSP3")
+![Homepage Banner](HomepageBanner.png "Homepage Banner")
+![Login Screen](login-screen.png "Login Screen")
+![Quest Tab](quest-tab.png "Quest Tab")
+![Tutorial](tutorial.png "Tutorial")
 
 ---
 
