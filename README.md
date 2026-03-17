@@ -2,251 +2,243 @@
 
 # RSC Single Player
 
-RSC Single Player is a standalone RuneScape Classic reproduction and sandbox: a fully self-contained client that runs locally with no separate server process or database required. It is aimed at preservation, experimentation, and nostalgic single‑player exploration of (nearly) the full original game content.
+A fully self-contained RuneScape Classic client that runs entirely offline — no server, no database, no internet required. Built for preservation, nostalgia, and experimentation.
+
+**Version 2.4 Beta** · Java 17+ · GPL v3
 
 ---
 
 ## Table of Contents
 - [Features](#features)
-- [Requirements](#requirements)
 - [Quick Start](#quick-start)
-- [Gameplay Notes](#gameplay-notes)
-- [Commands & Utilities](#commands--utilities)
+- [Commands](#commands)
 - [Bot System](#bot-system)
 - [Hardcore Mode](#hardcore-mode)
-- [Experience Rates](#experience-rates)
-- [Skill Batching System](#skill-batching-system)
-- [Development / Building](#development--building)
-- [Saving & Data](#saving--data)
+- [Building from Source](#building-from-source)
+- [Project Structure](#project-structure)
 - [Administrator Account](#administrator-account)
-- [Planned / Possible Enhancements](#planned--possible-enhancements)
 - [Media](#media)
 - [FAQ](#faq)
-- [Disclaimer](#disclaimer)
+- [License](#license)
 
 ---
 
 ## Features
 
-Core:
-- 100% single-process design (no external DB/server setup)
-- All core content including all 50 quests
-- Batched skill actions (configurable logic per skill/tool) similar in spirit to OpenRSC’s cabbage batching
-- Fully fixed UI with window resizing support (choose preferred dimensions)
-- Dynamic login screen
-- Multi-account capable (see notes below)
-- If you want to be not hardcore make sure to actually click on new account and make sure to not check hardcore.
-- If you bypass the create account and just login it may not do what you want. 
+- **Single-process** — everything runs in one JVM, no external dependencies
+- **All 50 quests** playable
+- **18-skill bot system** with auto-banking and combat support
+- **Resizable UI** — drag to any window size
+- **Batched skill actions** — woodcutting, mining, cooking, etc. use a tick-based batch system
+- **8x XP multiplier** (configurable in source)
+- **Hardcore mode** — death permanently deletes your save
+- **Multi-account** — create as many characters as you like
+- **Full music** — 55 MIDI tracks mapped to game regions
 
-Quality of Life:
-- Bank accessible anywhere via `::bank`
-- Teleport utility via `::tele <area>`
-- Item swapping in bank via right-click
-- Updated save handling for cross‑platform Java 8+ environments
-- Flexible experience modifier (1x–50x)
-- Hardcore mode (save deletion on death; see below)
-
-Recent Shop Update:
-- Bob's Axes now stocks ONLY woodcutting hatchets: Bronze, Iron, Steel, Rune (Mithril/Adamant deliberately omitted)
-- Bob’s also stocks Bronze through Rune pickaxes
-- Battle axes intentionally excluded from Bob’s inventory
-
----
-
-## Requirements
-- Java 8 or newer (recommended: latest LTS JDK)
-- Disk write permission in the working directory (for saves)
+### Quality of Life
+- `::bank` opens your bank from anywhere
+- `::tele` teleports to named locations or coordinates
+- `::stuck` unsticks your character
+- Right-click item swapping in the bank interface
+- Bob's Axes stocks hatchets (Bronze → Rune) and pickaxes (Bronze → Rune)
 
 ---
 
 ## Quick Start
-1. Download or build the project (see [Development / Building](#development--building) if compiling).
-2. Launch:
-   - Double-click `rsc.jar`, or
-   - Windows: `run.bat`
-   - Unix/Linux/macOS: `./run.sh`
-3. Click `New User` and create an account.
-4. Log in and play.
 
-Tip: To test administrator shortcuts, create a user named exactly `root` (case sensitive).
+**Requirements:** Java 17 or newer
+
+1. Download or clone the repository:
+   ```bash
+   git clone https://github.com/theKennethy/Single-RSC.git
+   cd Single-RSC
+   ```
+2. Launch the game:
+   - **Linux / macOS:** `./run.sh`
+   - **Windows:** `run.bat`
+   - **Or:** `java -cp "rsc.jar:lib/*" org.nemotech.rsc.Main`
+3. Click **New User**, create an account, and log in.
+
+> **Tip:** Create a user named `root` for admin privileges.
 
 ---
 
-## Gameplay Notes
-- You may create multiple accounts, but avoid actively playing more than one simultaneously in the same session. (Multiple windows are allowed; only use one actively to avoid state anomalies.)
-- Woodcutting uses the hatchet items; battle axes are purely combat weapons (and not sold in Bob’s shop).
-- Hardcore mode can be toggled; death in Hardcore will delete the save and close the client.
+## Commands
 
----
+### Player Commands
 
-## Commands & Utilities
 | Command | Description |
 |---------|-------------|
-| `::bank` | Opens the bank interface anywhere. |
-| `::tele <area>` | Teleports to a predefined area alias (list depends on internal config). |
-| (Admin/root) Mini-map right-click | Teleport utility for quick navigation. |
+| `::help` | Show help message |
+| `::bank` | Open bank anywhere |
+| `::stuck` | Unstick your character |
+| `::pos` | Show current coordinates |
+| `::toggleroofs` | Toggle roof rendering on/off |
+| `::mapedit` | Open the real-time map editor |
 
-(If you would like a published list of `::tele` area codes, we can add one—just ask.)
+### Admin Commands (user: `root`)
+
+| Command | Description |
+|---------|-------------|
+| `::tele <location>` | Teleport to a named location |
+| `::tele <x> <y>` | Teleport to coordinates |
+| `::town <location>` | Teleport to a town |
+| `::item <id> [amount]` | Spawn an item |
+| `::npc <id>` | Spawn an NPC |
+| `::object <id> [dir]` | Spawn an object |
+| `::set <skill> <level>` | Set a skill level |
+| `::addbank <id> [amount]` | Add item to bank |
+| `::removebank <id> [amount]` | Remove item from bank |
+| `::quest <id> <stage>` | Set quest stage |
+| `::find <entity> <string>` | Search for entities by name |
+| `::stresstest <type> <radius>` | Stress test entities |
+| `::debugobjects [radius]` | List nearby game objects |
+| Mini-map right-click | Teleport to clicked location |
 
 ---
 
 ## Bot System
 
-RSC Single Player includes a comprehensive bot system that can automate training for all 18 skills. Bots will automatically bank collected resources and handle common tasks like eating food during combat.
+A built-in bot framework that automates training for all 18 skills. Bots handle banking, eating, and resource management automatically. They stop cleanly when supplies run out or after repeated failures.
 
-### Bot Commands
+### Bot Management
 
 | Command | Description |
 |---------|-------------|
-| `::bothelp` | Shows all available bot commands |
-| `::stopbot` | Stops the currently running bot |
-| `::pausebot` | Pauses the current bot |
-| `::resumebot` | Resumes a paused bot |
-| `::botstatus` | Shows current bot status and statistics |
+| `::bot list` | List all registered bots |
+| `::bot start <name>` | Start a bot by name |
+| `::bot stop [name]` | Stop a bot (or all bots) |
+| `::bot pause` | Pause / resume the active bot |
+| `::bot status` | Show status of all bots |
+| `::botarea <location>` | Set bot working area by name |
+| `::botarea <x1> <x2> <y1> <y2>` | Set bot working area by coordinates |
+| `::botarea clear` | Clear bot area bounds |
 
-### Available Bots
+### Gathering Bots
 
-#### Combat Bots
-| Command | Skills Trained | Description |
-|---------|----------------|-------------|
-| `::combat <npc>` | Attack, Defense, Strength, Hits | Melee combat training |
-| `::ranged <npc>` | Ranged, Hits | Ranged combat training |
-| `::magic <npc> <spell>` | Magic, Hits | Magic combat training |
-| `::prayer <bones>` | Prayer | Buries bones (normal/big/dragon) |
+| Command | Skill | Details |
+|---------|-------|---------|
+| `::woodcut [type]` | Woodcutting | normal, oak, willow, maple, yew, magic |
+| `::fish [type]` | Fishing | net, fly, cage, harpoon, shark |
+| `::mine [type]` | Mining | copper, tin, iron, coal, gold, mith, addy, rune |
 
-#### Gathering Bots
-| Command | Skill | Description |
-|---------|-------|-------------|
-| `::woodcut <tree>` | Woodcutting | Cuts trees and banks logs |
-| `::fish <type>` | Fishing | Catches fish and banks them |
-| `::mine <ore>` | Mining | Mines ore and banks it |
+### Combat Bots
 
-#### Production Bots
-| Command | Skill | Description |
-|---------|-------|-------------|
-| `::cook <food>` | Cooking | Cooks raw food on ranges |
-| `::fm <log>` | Firemaking | Burns logs for firemaking XP |
-| `::smith <bar>` | Smithing | Smiths bars on anvils |
-| `::fletch <log>` | Fletching | Fletches logs into bows/arrows |
-| `::craft <mode> <item>` | Crafting | Leather work, spinning, pottery |
-| `::herblaw <mode> <herb>` | Herblaw | Identify herbs or make potions |
+| Command | Skill | Details |
+|---------|-------|---------|
+| `::combat [npc]` | Attack/Strength/Defence | Melee combat with auto-looting |
+| `::ranged [npc]` | Ranged | Ranged combat training |
+| `::magic [npc]` | Magic | Casts combat spells on NPCs |
 
-#### Support Bots
-| Command | Skill | Description |
-|---------|-------|-------------|
-| `::agility <course>` | Agility | Runs agility courses (gnome/barbarian/wilderness) |
-| `::thieve <target>` | Thieving | Pickpockets NPCs or steals from stalls |
+### Production Bots
 
-### Bot Examples
+| Command | Skill | Details |
+|---------|-------|---------|
+| `::cook` | Cooking | Cooks raw food on ranges |
+| `::fm` | Firemaking | Burns logs with tinderbox |
+| `::smith` | Smithing | Smiths bars at anvils |
+| `::fletch` | Fletching | Makes bows and arrows from logs |
+| `::craft [mode]` | Crafting | leather, spinning, pottery |
+| `::herblaw [mode]` | Herblaw | identify herbs, make potions |
 
+### Support Bots
+
+| Command | Skill | Details |
+|---------|-------|---------|
+| `::agility [course]` | Agility | gnome, barb, wild |
+| `::thieve [target]` | Thieving | Pickpockets NPCs |
+| `::prayer` | Prayer | Buries bones from inventory |
+
+### Bot Behavior
+- **Auto-banking** — gathering bots walk to the nearest bank when inventory is full
+- **Auto-eating** — combat bots eat food when HP drops low
+- **Clean shutdown** — bots stop themselves when out of supplies or after 3+ consecutive banking failures
+- **Statistics** — track items collected/processed and XP gained
+
+### Examples
 ```
-::woodcut willow       - Cuts willow trees
-::fish lobster         - Catches lobsters
-::mine iron            - Mines iron ore
-::combat goblin        - Fights goblins
-::agility gnome        - Runs the Gnome Agility Course
-::cook lobster         - Cooks raw lobsters
-::prayer dragon        - Buries dragon bones
-::craft leather gloves - Crafts leather gloves
-::herblaw identify     - Identifies unidentified herbs
+::woodcut willow       Cut willow trees, bank logs
+::fish lobster         Catch lobsters, bank them
+::mine iron            Mine iron ore, bank it
+::combat goblin        Fight goblins, eat food, loot drops
+::agility gnome        Run the Gnome Agility Course
+::cook                 Cook raw food on a nearby range
+::prayer               Bury all bones in inventory
+::craft leather        Craft leather items
+::herblaw identify     Identify unidentified herbs
 ```
-
-### Bot Features
-- **Auto-banking:** All gathering bots automatically bank collected resources
-- **Food support:** Combat bots eat food when health is low
-- **Statistics:** Track items collected, XP gained, and time running
-- **Pause/Resume:** Temporarily pause bots without losing progress
 
 ---
 
 ## Hardcore Mode
-- Enable/toggle via in-game option (once enabled, death enforcement applies).
-- On death: character save file is removed; client shuts down.
-- Logging back in starts a fresh profile.
+
+- Toggle when creating a new account (check the Hardcore box)
+- **On death:** your save file is permanently deleted and the client closes
+- Logging in again starts a fresh character
+- Back up your save file manually if you want a safety net
 
 ---
 
-## Experience Rates
-- Global modifier currently: 1x–50x (configured internally).
-- If you want a per-skill or dynamic scaling system, that can be added later.
+## Building from Source
 
----
+**Requirements:** Java 17+, `lib/gson-2.6.2.jar` (included)
 
-## Skill Batching System
-The batching system centralizes repeated actions (e.g., woodcutting swings, mining strikes, cooking batches) using a `BatchEvent` scheduler.
-
-Pattern (simplified):
-```java
-player.setBatchEvent(new BatchEvent(player, delayMs, repeatCount) {
-    @Override
-    public void action() {
-        // Perform one attempt
-        // Stop early with interrupt() if resource depleted, inv full, fatigue maxed, etc.
-    }
-});
+```bash
+BUILD_DIR="build" && \
+rm -rf "$BUILD_DIR" && \
+mkdir -p "$BUILD_DIR" && \
+find src -name '*.java' -print0 | xargs -0 javac -source 17 -target 17 -cp lib/gson-2.6.2.jar -d "$BUILD_DIR" && \
+jar cfm "rsc.jar" META-INF/MANIFEST.MF -C "$BUILD_DIR" . && \
+rm -rf "$BUILD_DIR"
 ```
 
-Guidelines:
-- Use `Formulae.getRepeatTimes(player, <skill>)` when level-scaling is desired.
-- Do NOT recursively call actions; let timers pace attempts.
-- Place validation (fatigue, inventory space, tool checks) inside each `action()` iteration.
-
-Current advantages:
-- Consistent pacing across skills
-- Clear interrupt semantics
-- Prevents runaway loops or CPU spikes from rapid re-queuing
+This produces `rsc.jar` in the project root. The build command is also saved in `compile.txt`.
 
 ---
 
-## Development / Building
-If you want to modify or extend the code:
+## Project Structure
 
-1. Clone:
-   ```bash
-   git clone https://github.com/kenyyhy/Single-RSC.git
-   cd Single-RSC
-   ```
-2. Ensure Java 8+ is on PATH:
-   ```bash
-   java -version
-   ```
-3. (If using a build tool) Import into your IDE (IntelliJ recommended).  
-4. Build (example using `javac`, adjust for your structure if a build script is present):
-   ```bash
-   javac -d out $(find src -name "*.java")
-   ```
-5. Package into a jar (if not already):
-   ```bash
-   jar --create --file rsc.jar -C out .
-   ```
-
-(If you’d like a Gradle or Maven build file, that can be introduced.)
-
----
-
-## Saving & Data
-- Saves are written locally (platform-agnostic handling improved).
-- If you migrate machines, copy the save directory (to be documented if needed).
-- Hardcore deletion events are irreversible unless you manually back up the save file beforehand.
+```
+Single-RSC/
+├── rsc.jar                  # Prebuilt game client
+├── run.sh / run.bat         # Launch scripts
+├── compile.txt              # Build command reference
+├── cache/
+│   ├── audio/music/         # 55 MIDI music tracks
+│   ├── audio/sounds/        # Sound effects
+│   ├── data/                # Game definitions (JSON)
+│   │   ├── item_def.json
+│   │   ├── npc_def.json
+│   │   ├── object_def.json
+│   │   └── ...
+│   ├── jags/                # Jagex cache archives
+│   └── players/             # Player save files
+├── lib/
+│   └── gson-2.6.2.jar       # JSON library dependency
+├── src/org/nemotech/rsc/
+│   ├── Main.java            # Entry point
+│   ├── Constants.java       # Configuration values
+│   ├── bot/                 # Bot framework
+│   │   ├── Bot.java         # Abstract base class
+│   │   ├── BotAPI.java      # 100+ game interaction methods
+│   │   ├── BotManager.java  # Lifecycle management
+│   │   └── scripts/         # 15 skill bot implementations
+│   ├── client/              # Client rendering and input
+│   ├── core/                # Game engine core
+│   ├── event/               # Event system
+│   ├── model/               # Game entities and world model
+│   └── ...
+└── META-INF/MANIFEST.MF     # JAR manifest
+```
 
 ---
 
 ## Administrator Account
-- Create user: `root`
-- Grants admin privileges:
-  - Mini-map right-click teleport
-  - Additional internal debug or management hooks (if enabled in code)
 
----
-
-## Planned / Possible Enhancements
-(Feel free to open issues or request items be added here.)
-- Formal `::tele` alias list documentation
-- Optional inclusion of Mithril/Adamant hatchets in Bob’s shop via config flag
-- In‑game help panel / command list
-- Build automation (Gradle/Maven)
-- Cross-save migration utility
-- Optional battle axe shop / merchant
+Create a user named exactly **`root`** (case-sensitive) to unlock:
+- All admin `::` commands (item spawning, teleportation, skill setting, etc.)
+- Mini-map right-click teleportation
+- Debug and stress-testing tools
 
 ---
 
@@ -260,34 +252,32 @@ If you want to modify or extend the code:
 
 ## FAQ
 
-**Q: Does this connect to any external server?**  
-A: No. Everything runs locally.
+**Q: Does this connect to any external server?**
+A: No. Everything runs locally in a single process.
 
-**Q: Are battle axes usable for Woodcutting?**  
-A: No, only hatchets (Bronze/Iron/Steel/Rune in current Bob’s inventory).
+**Q: What Java version do I need?**
+A: Java 17 or newer.
 
-**Q: Can I safely resize the window mid-session?**  
-A: Yes. UI is dynamic.
+**Q: Can I resize the window?**
+A: Yes, the UI scales dynamically.
 
-**Q: How do I restore a Hardcore character after death?**  
-A: Intended behavior is permanent loss; only manual file backups would bypass it.
+**Q: How do I restore a Hardcore character after death?**
+A: You can't — that's the point. Back up your save file beforehand if you want a safety net.
 
-**Q: Can I change XP rates?**  
-A: Not exposed via UI yet—requires code/config modification.
+**Q: Can I change XP rates?**
+A: Edit `EXPERIENCE_MULTIPLIER` in `Constants.java` and rebuild (default is 8x).
+
+**Q: Where are save files stored?**
+A: In the `saves/` directory (created at runtime in the working directory).
 
 ---
 
 ## Disclaimer
-This project is a preservation / educational single-player reimplementation. All original game assets, names, and concepts belong to their respective owners. Use responsibly and in accordance with applicable laws and terms.
 
----
-
-## Contributing
-If you’d like to propose improvements (e.g., configuration toggles, new batching patterns, bug fixes), feel free to open a pull request or issue. (A CONTRIBUTING.md can be added on request.)
+This project is a preservation and educational single-player reimplementation. All original game assets, names, and concepts belong to their respective owners. Use responsibly and in accordance with applicable laws.
 
 ---
 
 ## License
-GPL v3.0 (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
----
+GPL v3.0 — see [LICENSE](LICENSE) or https://www.gnu.org/licenses/gpl-3.0.txt
