@@ -16,6 +16,12 @@ public class WoodcuttingBot extends Bot {
     private int logsChopped = 0;
     private int treesChopped = 0;
     private int consecutiveBankFailures = 0;
+    private int lastTreeX = -1;
+    private int lastTreeY = -1;
+    private int chopAttempts = 0;
+    private int logCountBeforeChop = -1;
+    private int skipTreeX = -1;
+    private int skipTreeY = -1;
 
     public Integer areaMinX = null;
     public Integer areaMaxX = null;
@@ -73,6 +79,12 @@ public class WoodcuttingBot extends Bot {
         super.onStart();
         logsChopped = 0;
         treesChopped = 0;
+        chopAttempts = 0;
+        lastTreeX = -1;
+        lastTreeY = -1;
+        logCountBeforeChop = -1;
+        skipTreeX = -1;
+        skipTreeY = -1;
         state = State.CHOPPING;
         if (areaMinX == null) {
             areaMinX = SEERS_MAPLE_MIN_X;
@@ -108,11 +120,40 @@ public class WoodcuttingBot extends Bot {
     }
     
     private int chopTree() {
+        // Check if previous chop attempt succeeded
+        if (logCountBeforeChop >= 0 && lastTreeX >= 0) {
+            int currentLogs = getTotalLogCount();
+            if (currentLogs > logCountBeforeChop) {
+                // Chop succeeded - reset attempts
+                chopAttempts = 0;
+                skipTreeX = -1;
+                skipTreeY = -1;
+            } else {
+                // Chop failed on same tree
+                chopAttempts++;
+                if (chopAttempts >= 3) {
+                    gameMessage("@yel@Failed to chop tree 3 times, trying a different tree.");
+                    skipTreeX = lastTreeX;
+                    skipTreeY = lastTreeY;
+                    chopAttempts = 0;
+                }
+            }
+            logCountBeforeChop = -1;
+        }
+
         GameObject tree = findTreeInArea();
 
         if (tree == null || tree.isRemoved()) {
-            gameMessage("No tree found, searching...");
-            return searchForTree();
+            // If we were skipping a tree and found nothing else, clear the skip
+            if (skipTreeX >= 0) {
+                skipTreeX = -1;
+                skipTreeY = -1;
+                tree = findTreeInArea();
+            }
+            if (tree == null || tree.isRemoved()) {
+                gameMessage("No tree found, searching...");
+                return searchForTree();
+            }
         }
 
         if (!isInArea(tree.getX(), tree.getY())) {
@@ -129,7 +170,7 @@ public class WoodcuttingBot extends Bot {
             return random(300, 500);
         }
 
-        if (tree == null || tree.isRemoved()) {
+        if (tree.isRemoved()) {
             gameMessage("Tree gone before chop, searching...");
             return searchForTree();
         }
@@ -137,10 +178,21 @@ public class WoodcuttingBot extends Bot {
         gameMessage("Chopping tree at " + tree.getX() + "," + tree.getY() + "!");
         state = State.CHOPPING;
         treesChopped++;
+        lastTreeX = tree.getX();
+        lastTreeY = tree.getY();
+        logCountBeforeChop = getTotalLogCount();
         
         api.interactObject(tree);
         
         return random(2000, 4000);
+    }
+
+    private int getTotalLogCount() {
+        int total = 0;
+        for (int id : logIds) {
+            total += api.getInventoryCount(id);
+        }
+        return total;
     }
 
     private int searchForTree() {
@@ -167,10 +219,31 @@ public class WoodcuttingBot extends Bot {
     }
 
     private GameObject findTreeInArea() {
+        GameObject nearest = null;
+        int nearestDist = Integer.MAX_VALUE;
+
+        java.util.List<GameObject> candidates;
         if (areaMinX != null && areaMaxX != null && areaMinY != null && areaMaxY != null) {
-            return api.getNearestObjectInArea(treeIds, areaMinX.intValue(), areaMaxX.intValue(), areaMinY.intValue(), areaMaxY.intValue());
+            candidates = api.getAllObjectsInArea(treeIds, areaMinX.intValue(), areaMaxX.intValue(), areaMinY.intValue(), areaMaxY.intValue());
+        } else {
+            // Fall back to nearest in local area (no skip support for this path)
+            GameObject obj = api.getNearestObjectInLocalArea(treeIds, 200);
+            if (obj != null && skipTreeX >= 0 && obj.getX() == skipTreeX && obj.getY() == skipTreeY) {
+                return null; // skip it
+            }
+            return obj;
         }
-        return api.getNearestObjectInLocalArea(treeIds, 200);
+
+        for (GameObject obj : candidates) {
+            if (obj == null || obj.isRemoved()) continue;
+            if (skipTreeX >= 0 && obj.getX() == skipTreeX && obj.getY() == skipTreeY) continue;
+            int dist = api.distanceTo(obj);
+            if (dist < nearestDist) {
+                nearestDist = dist;
+                nearest = obj;
+            }
+        }
+        return nearest;
     }
 
     private int bankLogs() {
